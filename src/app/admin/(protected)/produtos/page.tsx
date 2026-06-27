@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Plus, Pencil, ImageOff, PackageSearch } from "lucide-react";
-import { toggleProdutoAtivo, excluirProduto } from "./actions";
+import { Plus, Pencil, Copy, ImageOff, PackageSearch } from "lucide-react";
+import { toggleProdutoAtivo, duplicarProduto, excluirProduto } from "./actions";
 import ConfirmDeleteButton from "../_components/ConfirmDeleteButton";
 import SearchInput from "./_components/SearchInput";
 import { Suspense } from "react";
@@ -180,6 +180,15 @@ export default async function ProdutosPage({
                             >
                               <Pencil size={14} />
                             </Link>
+                            <form action={duplicarProduto.bind(null, produto.id)}>
+                              <button
+                                type="submit"
+                                className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                                title="Duplicar produto"
+                              >
+                                <Copy size={14} />
+                              </button>
+                            </form>
                             <ConfirmDeleteButton
                               action={excluirProduto.bind(null, produto.id)}
                               message="Excluir este produto?"

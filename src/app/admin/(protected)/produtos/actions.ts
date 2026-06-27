@@ -55,6 +55,31 @@ export async function toggleProdutoAtivo(id: string, ativo: boolean) {
   revalidatePath("/admin/produtos");
 }
 
+export async function duplicarProduto(id: string) {
+  const session = await auth();
+  if (!session) throw new Error("Não autorizado");
+
+  const produto = await prisma.produto.findUnique({
+    where: { id, empresaId: session.user.empresaId },
+  });
+
+  if (!produto) throw new Error("Produto não encontrado");
+
+  await prisma.produto.create({
+    data: {
+      nome: `${produto.nome} (Cópia)`,
+      descricao: produto.descricao,
+      preco: produto.preco,
+      imagemUrl: produto.imagemUrl,
+      categoriaId: produto.categoriaId,
+      empresaId: session.user.empresaId,
+      ativo: false,
+    },
+  });
+
+  revalidatePath("/admin/produtos");
+}
+
 export async function excluirProduto(id: string) {
   const session = await auth();
   if (!session) throw new Error("Não autorizado");
