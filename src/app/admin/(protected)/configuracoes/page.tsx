@@ -1,11 +1,15 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Save } from "lucide-react";
 import { atualizarConfiguracoesLoja } from "./actions";
 import ImagensForm from "./_components/ImagensForm";
 import HorarioFuncionamento from "./_components/HorarioFuncionamento";
+import PaletaForm from "./_components/PaletaForm";
 
 export const dynamic = "force-dynamic";
+
+const inp =
+  "w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500";
 
 export default async function ConfiguracoesPage() {
   const session = await auth();
@@ -18,14 +22,14 @@ export default async function ConfiguracoesPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Configurações da Loja</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configurações da Loja</h1>
 
       {/* Dados básicos */}
-      <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">Dados da Loja</h2>
+      <section className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700/50 p-6">
+        <h2 className="text-base font-semibold text-gray-800 dark:text-slate-100 mb-4">Dados da Loja</h2>
         <form action={atualizarConfiguracoesLoja} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">
               Nome da Loja
             </label>
             <input
@@ -33,12 +37,12 @@ export default async function ConfiguracoesPage() {
               type="text"
               required
               defaultValue={empresa.nome}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              className={inp}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">
               WhatsApp (com DDI e DDD, apenas números)
             </label>
             <input
@@ -47,13 +51,13 @@ export default async function ConfiguracoesPage() {
               required
               placeholder="5511999999999"
               defaultValue={empresa.telefoneWhatsapp}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              className={inp}
             />
-            <p className="text-xs text-gray-400 mt-1">Ex: 5511999999999</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">Ex: 5511999999999</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">
               Taxa de Entrega (R$)
             </label>
             <input
@@ -63,39 +67,49 @@ export default async function ConfiguracoesPage() {
               min="0"
               required
               defaultValue={Number(empresa.taxaEntrega).toFixed(2)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              className={inp}
             />
           </div>
 
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 text-sm shadow-sm"
           >
+            <Save size={15} />
             Salvar Dados
           </button>
         </form>
       </section>
 
       {/* Imagens */}
-      <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">Imagens</h2>
+      <section className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700/50 p-6">
+        <h2 className="text-base font-semibold text-gray-800 dark:text-slate-100 mb-4">Imagens</h2>
         <ImagensForm
           currentPerfil={empresa.imagemPerfil}
           currentBanner={empresa.imagemBanner}
         />
       </section>
 
+      {/* Paleta de cores */}
+      <section className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700/50 p-6">
+        <h2 className="text-base font-semibold text-gray-800 dark:text-slate-100 mb-1">Cores da Loja</h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+          Escolha a paleta de cores exibida para os clientes no cardápio.
+        </p>
+        <PaletaForm currentPaleta={empresa.paletaCor} />
+      </section>
+
       {/* Horário de funcionamento */}
-      <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">
+      <section className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700/50 p-6">
+        <h2 className="text-base font-semibold text-gray-800 dark:text-slate-100 mb-4">
           Horário de Funcionamento
         </h2>
         <HorarioFuncionamento horarioAtual={empresa.horarioFuncionamento} />
       </section>
 
       {/* Link da loja */}
-      <div className="bg-gray-50 rounded-xl border border-gray-100 p-4">
-        <p className="text-xs font-medium text-gray-500 mb-1">Link público da loja</p>
+      <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-700/50 p-4">
+        <p className="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Link público da loja</p>
         <a
           href={`/loja/${empresa.slug}`}
           target="_blank"

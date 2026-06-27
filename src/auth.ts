@@ -45,8 +45,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token;
     },
     session({ session, token }) {
-      session.user.empresaId = token.empresaId;
-      session.user.empresaNome = token.empresaNome;
+      session.user.empresaId = token.empresaId as string;
+      session.user.empresaNome = token.empresaNome as string;
       return session;
     },
   },

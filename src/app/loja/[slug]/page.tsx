@@ -30,9 +30,15 @@ export default async function LojaPage({ params }: { params: Promise<{ slug: str
 
   const categoriasComProdutos = categorias.filter((c) => c.produtos.length > 0);
 
+  const acompanhamentos = await prisma.acompanhamento.findMany({
+    where: { empresaId: empresa.id, ativo: true },
+    orderBy: { nome: "asc" },
+  });
+
   const serialized = {
     ...empresa,
     taxaEntrega: empresa.taxaEntrega.toString(),
+    paletaCor: empresa.paletaCor,
   };
 
   const categoriasSerializadas = categoriasComProdutos.map((c) => ({
@@ -43,5 +49,10 @@ export default async function LojaPage({ params }: { params: Promise<{ slug: str
     })),
   }));
 
-  return <Vitrine empresa={serialized} categorias={categoriasSerializadas} />;
+  const acompanhamentosSerializados = acompanhamentos.map((a) => ({
+    ...a,
+    preco: a.preco.toString(),
+  }));
+
+  return <Vitrine empresa={serialized} categorias={categoriasSerializadas} acompanhamentos={acompanhamentosSerializados} />;
 }

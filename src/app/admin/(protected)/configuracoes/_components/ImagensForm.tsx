@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Save, CheckCircle2 } from "lucide-react";
 import ImageUpload from "../../_components/ImageUpload";
 import { salvarImagens } from "../actions";
 
@@ -48,11 +49,17 @@ export default function ImagensForm({
         <button
           type="submit"
           disabled={isPending}
-          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
+          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 text-sm shadow-sm"
         >
-          {isPending ? "Salvando..." : "Salvar Imagens"}
+          <Save size={15} />
+          {isPending ? "Salvando…" : "Salvar Imagens"}
         </button>
-        {salvo && <span className="text-sm text-green-600 font-medium">Salvo!</span>}
+        {salvo && (
+          <span className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium">
+            <CheckCircle2 size={15} />
+            Salvo!
+          </span>
+        )}
       </div>
     </form>
   );

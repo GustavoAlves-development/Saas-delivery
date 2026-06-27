@@ -8,23 +8,41 @@ datasource db {
 }
 
 model Empresa {
-  id                String     @id @default(cuid())
-  nome              String
-  slug              String     @unique
-  telefoneWhatsapp  String
-  taxaEntrega          Decimal   @default(0) @db.Decimal(10, 2)
-  imagemPerfil         String?
-  imagemBanner         String?
-  horarioFuncionamento String?
-  criadoEm             DateTime  @default(now())
-  atualizadoEm         DateTime  @updatedAt
+  id                    String            @id @default(cuid())
+  nome                  String
+  slug                  String            @unique
+  telefoneWhatsapp      String
+  taxaEntrega           Decimal           @default(0) @db.Decimal(10, 2)
+  imagemPerfil          String?
+  imagemBanner          String?
+  horarioFuncionamento  String?
+  paletaCor             String            @default("rose")
+  corFundo              String            @default("#f9fafb")
+  plano                 String            @default("basico")
+  statusMensalidade     StatusMensalidade @default(TRIAL)
+  vencimentoMensalidade DateTime?
+  valorMensalidade      Decimal           @default(99.90) @db.Decimal(10, 2)
+  criadoEm              DateTime          @default(now())
+  atualizadoEm          DateTime          @updatedAt
 
-  categorias        Categoria[]
-  produtos          Produto[]
-  pedidos           Pedido[]
-  usuarios          Usuario[]
+  categorias      Categoria[]
+  produtos        Produto[]
+  pedidos         Pedido[]
+  usuarios        Usuario[]
+  acompanhamentos Acompanhamento[]
 
   @@map("empresas")
+}
+
+model SuperAdmin {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  senha         String
+  sessionToken  String?   @unique
+  sessionExpiry DateTime?
+  criadoEm      DateTime  @default(now())
+
+  @@map("super_admins")
 }
 
 model Usuario {
@@ -82,14 +100,25 @@ model Pedido {
   @@map("pedidos")
 }
 
+model Acompanhamento {
+  id        String  @id @default(cuid())
+  nome      String
+  preco     Decimal @default(0) @db.Decimal(10, 2)
+  ativo     Boolean @default(true)
+  empresaId String
+  empresa   Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@map("acompanhamentos")
+}
+
 model ItemPedido {
-  id         String  @id @default(cuid())
-  pedidoId   String
-  pedido     Pedido  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  produtoId  String
+  id          String  @id @default(cuid())
+  pedidoId    String
+  pedido      Pedido  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produtoId   String
   nomeProduto String
-  preco      Decimal @db.Decimal(10, 2)
-  quantidade Int
+  preco       Decimal @db.Decimal(10, 2)
+  quantidade  Int
 
   @@map("itens_pedido")
 }
@@ -100,4 +129,11 @@ enum StatusPedido {
   DESPACHADO
   ENTREGUE
   CANCELADO
+}
+
+enum StatusMensalidade {
+  TRIAL
+  EM_DIA
+  VENCIDA
+  CANCELADA
 }

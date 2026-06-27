@@ -46,3 +46,15 @@ export async function salvarHorario(horarioJson: string) {
 
   revalidatePath("/admin/configuracoes");
 }
+
+export async function salvarPaletaCor(paletaId: string) {
+  const session = await auth();
+  if (!session) throw new Error("Não autorizado");
+
+  await prisma.empresa.update({
+    where: { id: session.user.empresaId },
+    data: { paletaCor: paletaId },
+  });
+
+  revalidatePath("/admin/configuracoes");
+}

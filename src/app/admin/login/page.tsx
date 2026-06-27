@@ -26,22 +26,22 @@ export default async function LoginPage({
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 transition-colors duration-200">
+      <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg dark:shadow-slate-900/50 w-full max-w-sm border border-transparent dark:border-slate-700/50">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Painel Admin</h1>
-          <p className="text-sm text-gray-500 mt-1">Acesse sua loja</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Painel Admin</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Acesse sua loja</p>
         </div>
 
         {params.error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400 text-sm rounded-lg">
             E-mail ou senha inválidos.
           </div>
         )}
 
         <form action={login} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">
               E-mail
             </label>
             <input
@@ -49,12 +49,12 @@ export default async function LoginPage({
               type="email"
               required
               autoComplete="email"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-200 mb-1">
               Senha
             </label>
             <input
@@ -62,7 +62,7 @@ export default async function LoginPage({
               type="password"
               required
               autoComplete="current-password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
