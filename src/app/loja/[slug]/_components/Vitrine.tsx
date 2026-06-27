@@ -1019,25 +1019,25 @@ export default function Vitrine({
                         </div>
 
                         {/* Botão/Controle */}
-                        <div className={temDescricao ? "" : "w-full"}>
+                        <div className={`${temDescricao ? "flex-shrink-0 self-center" : "w-full"}`}>
                           {qtd === 0 ? (
                             aberto ? (
                               <button
                                 onClick={() => adicionarProduto(produto)}
-                                className={`flex items-center justify-center gap-1 v-btn active:scale-95 font-semibold rounded-lg transition-all duration-200 v-shadow ${
+                                className={`flex items-center justify-center gap-1.5 v-btn active:scale-95 font-semibold rounded-lg transition-all duration-200 v-shadow ${
                                   temDescricao
-                                    ? "text-xs px-3 py-2"
+                                    ? "text-sm px-4 py-2.5"
                                     : "w-full text-xs px-3 py-2"
                                 }`}
                               >
-                                <Plus size={14} />
+                                <Plus size={16} />
                                 Adicionar
                               </button>
                             ) : (
                               <span
                                 className={`text-xs text-slate-400 font-medium rounded-lg bg-slate-100 ${
                                   temDescricao
-                                    ? "px-3 py-2 inline-block"
+                                    ? "px-4 py-2.5 inline-block"
                                     : "w-full py-2 block text-center"
                                 }`}
                               >
@@ -1047,7 +1047,7 @@ export default function Vitrine({
                           ) : (
                             <div
                               className={`flex items-center gap-1.5 bg-slate-100 rounded-lg ${
-                                temDescricao ? "px-2 py-1.5" : "w-full px-2 py-1.5"
+                                temDescricao ? "px-3 py-2" : "w-full px-2 py-1.5"
                               }`}
                             >
                               <button
