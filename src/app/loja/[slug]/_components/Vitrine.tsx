@@ -965,7 +965,7 @@ export default function Vitrine({
                         className={`bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${
                           temDescricao
                             ? "col-span-2 p-4 flex gap-4 items-start"
-                            : "p-4 flex flex-col items-center gap-3 text-center"
+                            : "p-4 flex flex-col items-center gap-3 text-center justify-between"
                         }`}
                       >
                         {/* Imagem */}
