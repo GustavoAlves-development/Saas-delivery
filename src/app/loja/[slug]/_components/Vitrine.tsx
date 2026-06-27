@@ -927,19 +927,21 @@ export default function Vitrine({
                     return (
                       <div
                         key={produto.id}
-                        className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 p-4 flex gap-4 items-start"
+                        className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 p-4 flex gap-4 items-stretch"
                       >
                         {/* Info do produto */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-900 text-sm leading-snug">
-                            {produto.nome}
-                          </p>
-                          {produto.descricao && (
-                            <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                              {produto.descricao}
+                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                          <div>
+                            <p className="font-semibold text-slate-900 text-sm leading-snug">
+                              {produto.nome}
                             </p>
-                          )}
-                          <p className="text-sm font-bold v-text mt-2">
+                            {produto.descricao && (
+                              <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                                {produto.descricao}
+                              </p>
+                            )}
+                          </div>
+                          <p className="text-sm font-bold v-text mt-3">
                             {fmt(produto.preco)}
                           </p>
                         </div>
