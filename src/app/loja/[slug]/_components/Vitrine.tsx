@@ -961,10 +961,23 @@ export default function Vitrine({
                     return (
                       <div
                         key={produto.id}
-                        className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 p-4 flex gap-4 items-start"
+                        className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 p-5 flex flex-col items-center gap-4 text-center"
                       >
-                        {/* Info do produto */}
-                        <div className="flex-1 min-w-0 flex flex-col gap-2.5">
+                        {/* Imagem */}
+                        {produto.imagemUrl && (
+                          <div className="relative w-24 h-24 rounded-xl overflow-hidden shadow-sm">
+                            <Image
+                              src={produto.imagemUrl}
+                              alt={produto.nome}
+                              fill
+                              className="object-cover"
+                              unoptimized
+                            />
+                          </div>
+                        )}
+
+                        {/* Info */}
+                        <div className="flex flex-col gap-1.5">
                           <p className="font-semibold text-slate-900 text-sm leading-snug">
                             {produto.nome}
                           </p>
@@ -973,59 +986,47 @@ export default function Vitrine({
                               {produto.descricao}
                             </p>
                           )}
-                          <p className="text-sm font-bold v-text">
-                            {fmt(produto.preco)}
-                          </p>
                         </div>
 
-                        {/* Imagem + controles */}
-                        <div className="flex-shrink-0 flex flex-col items-center gap-2.5">
-                          {produto.imagemUrl && (
-                            <div className="relative w-20 h-20 rounded-xl overflow-hidden shadow-sm">
-                              <Image
-                                src={produto.imagemUrl}
-                                alt={produto.nome}
-                                fill
-                                className="object-cover"
-                                unoptimized
-                              />
-                            </div>
-                          )}
+                        {/* Preço */}
+                        <p className="text-base font-bold v-text">
+                          {fmt(produto.preco)}
+                        </p>
 
-                          {qtd === 0 ? (
-                            aberto ? (
-                              <button
-                                onClick={() => adicionarProduto(produto)}
-                                className="flex items-center gap-1.5 v-btn active:scale-95 text-xs font-semibold px-3.5 py-2 rounded-xl transition-all duration-200 v-shadow"
-                              >
-                                <Plus size={13} />
-                                Adicionar
-                              </button>
-                            ) : (
-                              <span className="text-xs text-slate-400 font-medium px-3 py-2 rounded-xl bg-slate-100 cursor-not-allowed">
-                                Fechado
-                              </span>
-                            )
+                        {/* Botão/Controle */}
+                        {qtd === 0 ? (
+                          aberto ? (
+                            <button
+                              onClick={() => adicionarProduto(produto)}
+                              className="w-full flex items-center justify-center gap-1.5 v-btn active:scale-95 text-sm font-semibold px-4 py-2.5 rounded-xl transition-all duration-200 v-shadow"
+                            >
+                              <Plus size={16} />
+                              Adicionar
+                            </button>
                           ) : (
-                            <div className="flex items-center gap-2 bg-slate-100 rounded-xl px-2 py-1.5">
-                              <button
-                                onClick={() => alterarQuantidade(produto.id, -1)}
-                                className="w-6 h-6 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-600 v-hover transition-colors"
-                              >
-                                <Minus size={11} />
-                              </button>
-                              <span className="text-sm font-bold text-slate-900 w-4 text-center">
-                                {qtd}
-                              </span>
-                              <button
-                                onClick={() => alterarQuantidade(produto.id, 1)}
-                                className="w-6 h-6 rounded-lg v-btn flex items-center justify-center transition-colors"
-                              >
-                                <Plus size={11} />
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                            <span className="w-full text-sm text-slate-400 font-medium py-2.5 rounded-xl bg-slate-100">
+                              Fechado
+                            </span>
+                          )
+                        ) : (
+                          <div className="w-full flex items-center justify-between gap-2 bg-slate-100 rounded-xl px-3 py-2">
+                            <button
+                              onClick={() => alterarQuantidade(produto.id, -1)}
+                              className="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-600 v-hover transition-colors"
+                            >
+                              <Minus size={13} />
+                            </button>
+                            <span className="text-sm font-bold text-slate-900 flex-1 text-center">
+                              {qtd}
+                            </span>
+                            <button
+                              onClick={() => alterarQuantidade(produto.id, 1)}
+                              className="w-7 h-7 rounded-lg v-btn flex items-center justify-center transition-colors"
+                            >
+                              <Plus size={13} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
