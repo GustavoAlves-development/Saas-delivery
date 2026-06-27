@@ -811,7 +811,7 @@ export default function Vitrine({
 
             {/* Info */}
             <div className="pb-1 flex-1 min-w-0">
-              <h1 className="text-xl font-semibold text-slate-900 leading-tight truncate">
+              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight">
                 {empresa.nome}
               </h1>
               <div className="flex flex-wrap items-center gap-2 mt-1.5">
