@@ -958,14 +958,23 @@ export default function Vitrine({
                 <div className="grid grid-cols-2 gap-3">
                   {cat.produtos.map((produto) => {
                     const qtd = itens.find((i) => i.produto.id === produto.id)?.quantidade ?? 0;
+                    const temDescricao = !!produto.descricao;
                     return (
                       <div
                         key={produto.id}
-                        className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 p-4 flex flex-col items-center gap-3 text-center"
+                        className={`bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${
+                          temDescricao
+                            ? "col-span-2 p-4 flex gap-4 items-start"
+                            : "p-4 flex flex-col items-center gap-3 text-center"
+                        }`}
                       >
                         {/* Imagem */}
                         {produto.imagemUrl && (
-                          <div className="relative w-20 h-20 rounded-xl overflow-hidden shadow-sm">
+                          <div
+                            className={`relative rounded-xl overflow-hidden shadow-sm flex-shrink-0 ${
+                              temDescricao ? "w-20 h-20" : "w-20 h-20"
+                            }`}
+                          >
                             <Image
                               src={produto.imagemUrl}
                               alt={produto.nome}
@@ -977,56 +986,88 @@ export default function Vitrine({
                         )}
 
                         {/* Info */}
-                        <div className="flex flex-col gap-1">
-                          <p className="font-semibold text-slate-900 text-xs leading-snug line-clamp-2">
-                            {produto.nome}
-                          </p>
-                          {produto.descricao && (
-                            <p className="text-xs text-slate-400 line-clamp-2 leading-tight">
-                              {produto.descricao}
+                        <div
+                          className={`${
+                            temDescricao
+                              ? "flex-1 min-w-0 flex flex-col justify-between gap-2"
+                              : "flex flex-col gap-1"
+                          }`}
+                        >
+                          <div>
+                            <p
+                              className={`font-semibold text-slate-900 leading-snug ${
+                                temDescricao ? "text-sm" : "text-xs line-clamp-2"
+                              }`}
+                            >
+                              {produto.nome}
                             </p>
-                          )}
+                            {produto.descricao && (
+                              <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mt-1">
+                                {produto.descricao}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Preço */}
+                          <p
+                            className={`font-bold v-text ${
+                              temDescricao ? "text-sm" : "text-sm"
+                            }`}
+                          >
+                            {fmt(produto.preco)}
+                          </p>
                         </div>
 
-                        {/* Preço */}
-                        <p className="text-sm font-bold v-text">
-                          {fmt(produto.preco)}
-                        </p>
-
                         {/* Botão/Controle */}
-                        {qtd === 0 ? (
-                          aberto ? (
-                            <button
-                              onClick={() => adicionarProduto(produto)}
-                              className="w-full flex items-center justify-center gap-1 v-btn active:scale-95 text-xs font-semibold px-3 py-2 rounded-lg transition-all duration-200 v-shadow"
-                            >
-                              <Plus size={14} />
-                              Adicionar
-                            </button>
+                        <div className={temDescricao ? "" : "w-full"}>
+                          {qtd === 0 ? (
+                            aberto ? (
+                              <button
+                                onClick={() => adicionarProduto(produto)}
+                                className={`flex items-center justify-center gap-1 v-btn active:scale-95 font-semibold rounded-lg transition-all duration-200 v-shadow ${
+                                  temDescricao
+                                    ? "text-xs px-3 py-2"
+                                    : "w-full text-xs px-3 py-2"
+                                }`}
+                              >
+                                <Plus size={14} />
+                                Adicionar
+                              </button>
+                            ) : (
+                              <span
+                                className={`text-xs text-slate-400 font-medium rounded-lg bg-slate-100 ${
+                                  temDescricao
+                                    ? "px-3 py-2 inline-block"
+                                    : "w-full py-2 block text-center"
+                                }`}
+                              >
+                                Fechado
+                              </span>
+                            )
                           ) : (
-                            <span className="w-full text-xs text-slate-400 font-medium py-2 rounded-lg bg-slate-100">
-                              Fechado
-                            </span>
-                          )
-                        ) : (
-                          <div className="w-full flex items-center justify-between gap-1.5 bg-slate-100 rounded-lg px-2 py-1.5">
-                            <button
-                              onClick={() => alterarQuantidade(produto.id, -1)}
-                              className="w-6 h-6 rounded-md bg-white shadow-sm flex items-center justify-center text-slate-600 v-hover transition-colors"
+                            <div
+                              className={`flex items-center gap-1.5 bg-slate-100 rounded-lg ${
+                                temDescricao ? "px-2 py-1.5" : "w-full px-2 py-1.5"
+                              }`}
                             >
-                              <Minus size={11} />
-                            </button>
-                            <span className="text-xs font-bold text-slate-900 flex-1 text-center">
-                              {qtd}
-                            </span>
-                            <button
-                              onClick={() => alterarQuantidade(produto.id, 1)}
-                              className="w-6 h-6 rounded-md v-btn flex items-center justify-center transition-colors"
-                            >
-                              <Plus size={11} />
-                            </button>
-                          </div>
-                        )}
+                              <button
+                                onClick={() => alterarQuantidade(produto.id, -1)}
+                                className="w-6 h-6 rounded-md bg-white shadow-sm flex items-center justify-center text-slate-600 v-hover transition-colors flex-shrink-0"
+                              >
+                                <Minus size={11} />
+                              </button>
+                              <span className="text-xs font-bold text-slate-900 flex-1 text-center">
+                                {qtd}
+                              </span>
+                              <button
+                                onClick={() => alterarQuantidade(produto.id, 1)}
+                                className="w-6 h-6 rounded-md v-btn flex items-center justify-center transition-colors flex-shrink-0"
+                              >
+                                <Plus size={11} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
