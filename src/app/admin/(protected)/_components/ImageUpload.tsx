@@ -38,6 +38,7 @@ export default function ImageUpload({
 
     const form = new FormData();
     form.append("file", file);
+    form.append("variant", variant);
 
     try {
       const res = await fetch("/api/upload", { method: "POST", body: form });
