@@ -656,6 +656,7 @@ export default function Vitrine({
   const [itens, setItens] = useState<ItemCarrinho[]>([]);
   const [carrinhoAberto, setCarrinhoAberto] = useState(false);
   const [pedidoEnviado, setPedidoEnviado] = useState(false);
+  const [categoriaFiltro, setCategoriaFiltro] = useState<string>("");
   const horario = parsedHorario(empresa.horarioFuncionamento);
   const hoje = horario?.find((d) => d.dia === DIAS[new Date().getDay()]);
   const aberto = estaAbertoAgora(hoje);
@@ -914,9 +915,42 @@ export default function Vitrine({
             </div>
           )}
 
+          {/* ── FILTRO DE CATEGORIAS ── */}
+          {categorias.length > 1 && (
+            <div className="mb-6 pb-4 border-b border-slate-200">
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                <button
+                  onClick={() => setCategoriaFiltro("")}
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+                    categoriaFiltro === ""
+                      ? "v-btn v-shadow"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  Todos
+                </button>
+                {categorias.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setCategoriaFiltro(cat.id)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+                      categoriaFiltro === cat.id
+                        ? "v-btn v-shadow"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    {cat.nome}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ── CATÁLOGO ── */}
           <div className="space-y-10 pb-36">
-            {categorias.map((cat) => (
+            {categorias
+              .filter((cat) => !categoriaFiltro || cat.id === categoriaFiltro)
+              .map((cat) => (
               <section key={cat.id}>
                 <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">
                   {cat.nome}
