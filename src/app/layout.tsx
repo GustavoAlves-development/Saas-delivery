@@ -33,6 +33,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <link rel="icon" type="image/png" href="/favicon.png" />
         {/*
           Anti-flash: aplica .dark antes do React hidratar.
           Admin usa chave "tema-admin" (padrão: segue sistema).
