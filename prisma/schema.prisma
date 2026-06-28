@@ -103,13 +103,14 @@ model Pedido {
 }
 
 model Acompanhamento {
-  id        String  @id @default(cuid())
+  id        String              @id @default(cuid())
   nome      String
-  preco     Decimal @default(0) @db.Decimal(10, 2)
+  preco     Decimal             @default(0) @db.Decimal(10, 2)
   imagemUrl String?
-  ativo     Boolean @default(true)
+  tipo      TipoAcompanhamento  @default(ACOMPANHAMENTO)
+  ativo     Boolean             @default(true)
   empresaId String
-  empresa   Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  empresa   Empresa             @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
   @@map("acompanhamentos")
 }
@@ -145,4 +146,9 @@ enum TipoEmpresa {
   LANCHONETE
   PIZZARIA
   RESTAURANTE
+}
+
+enum TipoAcompanhamento {
+  ADICIONAL
+  ACOMPANHAMENTO
 }

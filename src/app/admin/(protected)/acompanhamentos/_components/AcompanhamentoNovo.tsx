@@ -8,7 +8,7 @@ import { criarAcompanhamento } from "../actions";
 const inp =
   "px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-900 dark:text-white bg-white dark:bg-slate-700 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200";
 
-export default function AcompanhamentoNovo() {
+export default function AcompanhamentoNovo({ tipo }: { tipo: "ADICIONAL" | "ACOMPANHAMENTO" }) {
   const [imagemUrl, setImagemUrl] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -16,6 +16,7 @@ export default function AcompanhamentoNovo() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     fd.set("imagemUrl", imagemUrl);
+    fd.set("tipo", tipo);
     const form = e.currentTarget;
     startTransition(async () => {
       await criarAcompanhamento(fd);

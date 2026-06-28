@@ -11,6 +11,7 @@ import {
   Store,
   UtensilsCrossed,
   LayoutDashboard,
+  Layers,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import NotificadorPedidos from "./NotificadorPedidos";
@@ -21,6 +22,7 @@ const navLinks = [
   { href: "/admin/pedidos", label: "Pedidos", icon: ClipboardList },
   { href: "/admin/produtos", label: "Produtos", icon: Package },
   { href: "/admin/categorias", label: "Categorias", icon: Tag },
+  { href: "/admin/adicionais", label: "Adicionais", icon: Layers },
   { href: "/admin/acompanhamentos", label: "Acompanhamentos", icon: UtensilsCrossed },
   { href: "/admin/configuracoes", label: "Configurações", icon: Settings },
 ];

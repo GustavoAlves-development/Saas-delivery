@@ -30,10 +30,16 @@ export default async function LojaPage({ params }: { params: Promise<{ slug: str
 
   const categoriasComProdutos = categorias.filter((c) => c.produtos.length > 0);
 
-  const acompanhamentos = await prisma.acompanhamento.findMany({
-    where: { empresaId: empresa.id, ativo: true },
-    orderBy: { nome: "asc" },
-  });
+  const [adicionais, acompanhamentos] = await Promise.all([
+    prisma.acompanhamento.findMany({
+      where: { empresaId: empresa.id, ativo: true, tipo: "ADICIONAL" },
+      orderBy: { nome: "asc" },
+    }),
+    prisma.acompanhamento.findMany({
+      where: { empresaId: empresa.id, ativo: true, tipo: "ACOMPANHAMENTO" },
+      orderBy: { nome: "asc" },
+    }),
+  ]);
 
   const serialized = {
     ...empresa,
@@ -51,11 +57,19 @@ export default async function LojaPage({ params }: { params: Promise<{ slug: str
     })),
   }));
 
-  const acompanhamentosSerializados = acompanhamentos.map((a) => ({
-    ...a,
+  const serialize = (a: typeof adicionais[0]) => ({
+    id: a.id,
+    nome: a.nome,
     preco: a.preco.toString(),
     imagemUrl: a.imagemUrl,
-  }));
+  });
 
-  return <Vitrine empresa={serialized} categorias={categoriasSerializadas} acompanhamentos={acompanhamentosSerializados} />;
+  return (
+    <Vitrine
+      empresa={serialized}
+      categorias={categoriasSerializadas}
+      adicionais={adicionais.map(serialize)}
+      acompanhamentos={acompanhamentos.map(serialize)}
+    />
+  );
 }
