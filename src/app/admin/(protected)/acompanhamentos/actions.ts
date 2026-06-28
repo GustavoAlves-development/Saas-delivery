@@ -12,6 +12,7 @@ export async function criarAcompanhamento(formData: FormData) {
     data: {
       nome: formData.get("nome") as string,
       preco: parseFloat((formData.get("preco") as string) || "0"),
+      imagemUrl: (formData.get("imagemUrl") as string) || null,
       empresaId: session.user.empresaId,
     },
   });
@@ -28,6 +29,7 @@ export async function atualizarAcompanhamento(id: string, formData: FormData) {
     data: {
       nome: formData.get("nome") as string,
       preco: parseFloat((formData.get("preco") as string) || "0"),
+      imagemUrl: (formData.get("imagemUrl") as string) || null,
     },
   });
 

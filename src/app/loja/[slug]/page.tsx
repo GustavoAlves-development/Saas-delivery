@@ -54,6 +54,7 @@ export default async function LojaPage({ params }: { params: Promise<{ slug: str
   const acompanhamentosSerializados = acompanhamentos.map((a) => ({
     ...a,
     preco: a.preco.toString(),
+    imagemUrl: a.imagemUrl,
   }));
 
   return <Vitrine empresa={serialized} categorias={categoriasSerializadas} acompanhamentos={acompanhamentosSerializados} />;

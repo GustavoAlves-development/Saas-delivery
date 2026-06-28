@@ -8,7 +8,7 @@ type Props = {
   name: string;
   currentUrl?: string | null;
   label: string;
-  variant?: "square" | "banner";
+  variant?: "square" | "banner" | "mini";
   onUrlChange?: (url: string) => void;
 };
 
@@ -38,7 +38,7 @@ export default function ImageUpload({
 
     const form = new FormData();
     form.append("file", file);
-    form.append("variant", variant);
+    form.append("variant", apiVariant);
 
     try {
       const res = await fetch("/api/upload", { method: "POST", body: form });
@@ -53,6 +53,9 @@ export default function ImageUpload({
   }
 
   const isBanner = variant === "banner";
+  const isMini = variant === "mini";
+  const apiVariant = isMini ? "square" : (variant ?? "square");
+  const sizeClass = isBanner ? "h-36 w-full" : isMini ? "h-12 w-12" : "h-28 w-28";
 
   return (
     <div>
@@ -75,7 +78,7 @@ export default function ImageUpload({
           url
             ? "border-gray-200 hover:border-blue-400"
             : "border-dashed border-gray-300 hover:border-blue-400 bg-gray-50"
-        } ${isBanner ? "h-36 w-full" : "h-28 w-28"}`}
+        } ${sizeClass}`}
       >
         {url ? (
           <>
@@ -92,10 +95,12 @@ export default function ImageUpload({
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-1 text-gray-400">
-            <Upload size={20} />
-            <span className="text-xs">
-              {uploading ? "Enviando..." : "Clique para enviar"}
-            </span>
+            <Upload size={isMini ? 14 : 20} />
+            {!isMini && (
+              <span className="text-xs">
+                {uploading ? "Enviando..." : "Clique para enviar"}
+              </span>
+            )}
           </div>
         )}
 

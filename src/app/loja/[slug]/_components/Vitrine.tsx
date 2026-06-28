@@ -60,6 +60,7 @@ type Acompanhamento = {
   id: string;
   nome: string;
   preco: string;
+  imagemUrl: string | null;
 };
 
 type Categoria = {
@@ -1290,7 +1291,7 @@ export default function Vitrine({
                               key={a.id}
                               type="button"
                               onClick={() => toggleAdicionalConfigurador(a.id)}
-                              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 text-sm transition-all duration-200 ${
+                              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border-2 text-sm transition-all duration-200 ${
                                 sel ? "v-selected" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                               }`}
                             >
@@ -1298,6 +1299,11 @@ export default function Vitrine({
                                 <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${sel ? "v-icon" : "border-slate-300"}`}>
                                   {sel && <CheckCircle2 size={12} className="text-white" strokeWidth={3} />}
                                 </span>
+                                {a.imagemUrl && (
+                                  <div className="relative w-9 h-9 rounded-lg overflow-hidden flex-shrink-0">
+                                    <Image src={a.imagemUrl} alt={a.nome} fill className="object-cover" unoptimized />
+                                  </div>
+                                )}
                                 <span className="font-medium">{a.nome}</span>
                               </span>
                               <span className={`font-semibold text-xs ${sel ? "v-text" : "text-slate-400"}`}>
