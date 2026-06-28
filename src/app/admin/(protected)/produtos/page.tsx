@@ -1,7 +1,8 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Plus, Pencil, Copy, ImageOff, PackageSearch } from "lucide-react";
+import { Plus, Pencil, Copy, PackageSearch } from "lucide-react";
+import ProdutoImagemInline from "./_components/ProdutoImagemInline";
 import { toggleProdutoAtivo, duplicarProduto, excluirProduto } from "./actions";
 import ConfirmDeleteButton from "../_components/ConfirmDeleteButton";
 import SearchInput from "./_components/SearchInput";
@@ -122,20 +123,11 @@ export default async function ProdutosPage({
                       >
                         {/* Imagem */}
                         <td className="pl-4 sm:pl-5 pr-3 py-3 w-14">
-                          {produto.imagemUrl ? (
-                            <div className="w-11 h-11 rounded-xl overflow-hidden border border-gray-100 dark:border-slate-700 shrink-0">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={produto.imagemUrl}
-                                alt={produto.nome}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-11 h-11 rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center border border-gray-100 dark:border-slate-600 shrink-0">
-                              <ImageOff size={14} className="text-gray-300 dark:text-slate-500" />
-                            </div>
-                          )}
+                          <ProdutoImagemInline
+                            produtoId={produto.id}
+                            imagemUrl={produto.imagemUrl}
+                            nome={produto.nome}
+                          />
                         </td>
 
                         {/* Nome + descrição */}

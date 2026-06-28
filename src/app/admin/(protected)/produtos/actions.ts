@@ -59,6 +59,18 @@ export async function toggleProdutoAtivo(id: string, ativo: boolean) {
   revalidatePath("/admin/produtos");
 }
 
+export async function atualizarImagemProduto(id: string, imagemUrl: string | null) {
+  const session = await auth();
+  if (!session) throw new Error("Não autorizado");
+
+  await prisma.produto.update({
+    where: { id, empresaId: session.user.empresaId },
+    data: { imagemUrl },
+  });
+
+  revalidatePath("/admin/produtos");
+}
+
 export async function duplicarProduto(id: string) {
   const session = await auth();
   if (!session) throw new Error("Não autorizado");
