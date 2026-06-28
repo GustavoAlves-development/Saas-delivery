@@ -51,6 +51,7 @@ type Produto = {
   nome: string;
   descricao: string | null;
   preco: string;
+  precoMedio: string | null;
   imagemUrl: string | null;
   categoriaId: string;
 };
@@ -77,9 +78,17 @@ type Empresa = {
   imagemBanner: string | null;
   horarioFuncionamento: string | null;
   paletaCor: string;
+  tipo: string;
 };
 
-type ItemCarrinho = { produto: Produto; quantidade: number };
+type Tamanho = "grande" | "medio";
+type ItemCarrinho = {
+  chave: string;
+  produto: Produto;
+  quantidade: number;
+  tamanho?: Tamanho;
+  precoEfetivo: string;
+};
 type FormaPagamento = "Dinheiro" | "Cartão de Débito" | "Cartão de Crédito" | "PIX";
 type TipoEntrega = "entrega" | "retirada";
 
@@ -151,9 +160,12 @@ function gerarMensagemWhatsApp(
       : `${form.rua}, ${form.numero}${form.complemento ? ` - ${form.complemento}` : ""}, ${form.bairro}, CEP ${form.cep}`;
 
   const linhasItens = itens
-    .map((i) => `• ${i.quantidade}x ${i.produto.nome} — ${fmt(Number(i.produto.preco) * i.quantidade)}`)
+    .map((i) => {
+      const label = i.tamanho ? ` (${i.tamanho === "grande" ? "Grande" : "Médio"})` : "";
+      return `• ${i.quantidade}x ${i.produto.nome}${label} — ${fmt(Number(i.precoEfetivo) * i.quantidade)}`;
+    })
     .join("\n");
-  const subtotal = itens.reduce((s, i) => s + Number(i.produto.preco) * i.quantidade, 0);
+  const subtotal = itens.reduce((s, i) => s + Number(i.precoEfetivo) * i.quantidade, 0);
   const totalAcomp = acompSelecionados.reduce((s, a) => s + Number(a.preco), 0);
   const total = subtotal + taxaEfetiva + totalAcomp;
 
@@ -206,7 +218,7 @@ function Carrinho({
   empresa: Empresa;
   acompanhamentos: Acompanhamento[];
   onClose: () => void;
-  onAlterarQtd: (id: string, delta: number) => void;
+  onAlterarQtd: (chave: string, delta: number) => void;
   onFinalizar: (form: FormPedido, selecionados: Acompanhamento[]) => void;
 }) {
   const [etapa, setEtapa] = useState<"carrinho" | "checkout">("carrinho");
@@ -224,7 +236,7 @@ function Carrinho({
   const [pagamento, setPagamento] = useState<FormaPagamento>("PIX");
   const [obs, setObs] = useState("");
 
-  const subtotal = itens.reduce((s, i) => s + Number(i.produto.preco) * i.quantidade, 0);
+  const subtotal = itens.reduce((s, i) => s + Number(i.precoEfetivo) * i.quantidade, 0);
   const taxaEfetiva = tipoEntrega === "retirada" ? 0 : Number(empresa.taxaEntrega);
   const totalAcomp = acompanhamentos
     .filter((a) => acompSelecionados.has(a.id))
@@ -315,7 +327,7 @@ function Carrinho({
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
               {itens.map((item) => (
                 <div
-                  key={item.produto.id}
+                  key={item.chave}
                   className="flex items-center gap-3 bg-slate-50 rounded-2xl p-3"
                 >
                   {item.produto.imagemUrl && (
@@ -333,11 +345,18 @@ function Carrinho({
                     <p className="font-semibold text-slate-900 text-sm leading-tight truncate">
                       {item.produto.nome}
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5">{fmt(item.produto.preco)} cada</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {item.tamanho && (
+                        <span className="mr-1 font-medium">
+                          {item.tamanho === "grande" ? "Grande ·" : "Médio ·"}
+                        </span>
+                      )}
+                      {fmt(item.precoEfetivo)} cada
+                    </p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
-                      onClick={() => onAlterarQtd(item.produto.id, -1)}
+                      onClick={() => onAlterarQtd(item.chave, -1)}
                       className="w-7 h-7 rounded-full bg-white border border-slate-200 v-hover flex items-center justify-center text-slate-600 transition-all duration-200"
                     >
                       <Minus size={12} />
@@ -346,7 +365,7 @@ function Carrinho({
                       {item.quantidade}
                     </span>
                     <button
-                      onClick={() => onAlterarQtd(item.produto.id, 1)}
+                      onClick={() => onAlterarQtd(item.chave, 1)}
                       className="w-7 h-7 rounded-full v-btn flex items-center justify-center transition-all duration-200"
                     >
                       <Plus size={12} />
@@ -375,7 +394,7 @@ function Carrinho({
                 </div>
                 <div className="flex justify-between font-bold text-slate-900 text-base pt-2 border-t border-slate-200">
                   <span>Total estimado</span>
-                  <span>{fmt(subtotal + Number(empresa.taxaEntrega))}</span>
+                  <span>{fmt(subtotal + taxaEfetiva)}</span>
                 </div>
               </div>
               <button
@@ -657,6 +676,7 @@ export default function Vitrine({
   const [carrinhoAberto, setCarrinhoAberto] = useState(false);
   const [pedidoEnviado, setPedidoEnviado] = useState(false);
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("");
+  const [seletorTamanho, setSeletorTamanho] = useState<Produto | null>(null);
   const horario = parsedHorario(empresa.horarioFuncionamento);
   const hoje = horario?.find((d) => d.dia === DIAS[new Date().getDay()]);
   const aberto = estaAbertoAgora(hoje);
@@ -678,24 +698,35 @@ export default function Vitrine({
   );
 
   function adicionarProduto(produto: Produto) {
-    const existe = itens.find((i) => i.produto.id === produto.id);
-    if (existe) {
-      salvar(itens.map((i) => i.produto.id === produto.id ? { ...i, quantidade: i.quantidade + 1 } : i));
-    } else {
-      salvar([...itens, { produto, quantidade: 1 }]);
+    if (empresa.tipo === "LANCHONETE" && produto.precoMedio) {
+      setSeletorTamanho(produto);
+      return;
     }
+    adicionarComTamanho(produto, undefined);
   }
 
-  function alterarQuantidade(produtoId: string, delta: number) {
+  function adicionarComTamanho(produto: Produto, tamanho: Tamanho | undefined) {
+    const chave = `${produto.id}_${tamanho ?? ""}`;
+    const precoEfetivo = tamanho === "medio" && produto.precoMedio ? produto.precoMedio : produto.preco;
+    const existe = itens.find((i) => i.chave === chave);
+    if (existe) {
+      salvar(itens.map((i) => i.chave === chave ? { ...i, quantidade: i.quantidade + 1 } : i));
+    } else {
+      salvar([...itens, { chave, produto, quantidade: 1, tamanho, precoEfetivo }]);
+    }
+    setSeletorTamanho(null);
+  }
+
+  function alterarQuantidade(chave: string, delta: number) {
     salvar(
       itens
-        .map((i) => i.produto.id === produtoId ? { ...i, quantidade: i.quantidade + delta } : i)
+        .map((i) => i.chave === chave ? { ...i, quantidade: i.quantidade + delta } : i)
         .filter((i) => i.quantidade > 0)
     );
   }
 
   async function finalizarPedido(form: FormPedido, acompSelecionados: Acompanhamento[]) {
-    const subtotal = itens.reduce((s, i) => s + Number(i.produto.preco) * i.quantidade, 0);
+    const subtotal = itens.reduce((s, i) => s + Number(i.precoEfetivo) * i.quantidade, 0);
     const taxaEfetiva = form.tipoEntrega === "retirada" ? 0 : Number(empresa.taxaEntrega);
     const totalAcomp = acompSelecionados.reduce((s, a) => s + Number(a.preco), 0);
     const total = subtotal + taxaEfetiva + totalAcomp;
@@ -706,7 +737,12 @@ export default function Vitrine({
         : `${form.rua}, ${form.numero}${form.complemento ? ` - ${form.complemento}` : ""}, ${form.bairro}, CEP ${form.cep}`;
 
     const itensApi = [
-      ...itens.map((i) => ({ produtoId: i.produto.id, nomeProduto: i.produto.nome, preco: i.produto.preco, quantidade: i.quantidade })),
+      ...itens.map((i) => ({
+        produtoId: i.produto.id,
+        nomeProduto: i.tamanho ? `${i.produto.nome} (${i.tamanho === "grande" ? "Grande" : "Médio"})` : i.produto.nome,
+        preco: i.precoEfetivo,
+        quantidade: i.quantidade,
+      })),
       ...acompSelecionados.map((a) => ({ produtoId: a.id, nomeProduto: a.nome, preco: a.preco, quantidade: 1 })),
     ];
 
@@ -726,7 +762,7 @@ export default function Vitrine({
   }
 
   const totalItens = itens.reduce((s, i) => s + i.quantidade, 0);
-  const valorCarrinho = itens.reduce((s, i) => s + Number(i.produto.preco) * i.quantidade, 0);
+  const valorCarrinho = itens.reduce((s, i) => s + Number(i.precoEfetivo) * i.quantidade, 0);
   const proximaAberturaLabel = !aberto && horario ? proximaAbertura(horario) : null;
 
   /* ─── CSS de paleta injetado uma vez no root ─── */
@@ -957,7 +993,10 @@ export default function Vitrine({
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
                   {cat.produtos.map((produto) => {
-                    const qtd = itens.find((i) => i.produto.id === produto.id)?.quantidade ?? 0;
+                    const qtdTotal = itens.filter((i) => i.produto.id === produto.id).reduce((s, i) => s + i.quantidade, 0);
+                    const temTamanho = empresa.tipo === "LANCHONETE" && !!produto.precoMedio;
+                    const itemUnico = !temTamanho ? itens.find((i) => i.produto.id === produto.id) : null;
+                    const qtd = itemUnico?.quantidade ?? 0;
                     const temDescricao = !!produto.descricao;
                     return (
                       <div
@@ -1009,18 +1048,45 @@ export default function Vitrine({
                           </div>
 
                           {/* Preço */}
-                          <p
-                            className={`font-bold v-text ${
-                              temDescricao ? "text-sm" : "text-sm"
-                            }`}
-                          >
-                            {fmt(produto.preco)}
-                          </p>
+                          <div className={`font-bold v-text text-sm`}>
+                            {temTamanho ? (
+                              <span>
+                                {fmt(produto.precoMedio!)}
+                                <span className="text-slate-400 font-normal text-xs"> / </span>
+                                {fmt(produto.preco)}
+                              </span>
+                            ) : (
+                              fmt(produto.preco)
+                            )}
+                          </div>
                         </div>
 
                         {/* Botão/Controle */}
                         <div className={`${temDescricao ? "flex-shrink-0 self-center" : "w-full"}`}>
-                          {qtd === 0 ? (
+                          {temTamanho ? (
+                            aberto ? (
+                              <div className="relative inline-flex">
+                                <button
+                                  onClick={() => adicionarProduto(produto)}
+                                  className={`flex items-center justify-center gap-1.5 v-btn active:scale-95 font-semibold rounded-lg transition-all duration-200 v-shadow ${
+                                    temDescricao ? "text-sm px-4 py-2.5" : "w-full text-xs px-3 py-2"
+                                  }`}
+                                >
+                                  <Plus size={16} />
+                                  Adicionar
+                                </button>
+                                {qtdTotal > 0 && (
+                                  <span className="absolute -top-2 -right-2 v-btn text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center leading-none shadow-sm">
+                                    {qtdTotal}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className={`text-xs text-slate-400 font-medium rounded-lg bg-slate-100 ${temDescricao ? "px-4 py-2.5 inline-block" : "w-full py-2 block text-center"}`}>
+                                Fechado
+                              </span>
+                            )
+                          ) : qtd === 0 ? (
                             aberto ? (
                               <button
                                 onClick={() => adicionarProduto(produto)}
@@ -1051,7 +1117,7 @@ export default function Vitrine({
                               }`}
                             >
                               <button
-                                onClick={() => alterarQuantidade(produto.id, -1)}
+                                onClick={() => alterarQuantidade(itemUnico!.chave, -1)}
                                 className="w-6 h-6 rounded-md bg-white shadow-sm flex items-center justify-center text-slate-600 v-hover transition-colors flex-shrink-0"
                               >
                                 <Minus size={11} />
@@ -1060,7 +1126,7 @@ export default function Vitrine({
                                 {qtd}
                               </span>
                               <button
-                                onClick={() => alterarQuantidade(produto.id, 1)}
+                                onClick={() => alterarQuantidade(itemUnico!.chave, 1)}
                                 className="w-6 h-6 rounded-md v-btn flex items-center justify-center transition-colors flex-shrink-0"
                               >
                                 <Plus size={11} />
@@ -1116,6 +1182,48 @@ export default function Vitrine({
             onAlterarQtd={alterarQuantidade}
             onFinalizar={finalizarPedido}
           />
+        )}
+
+        {/* ── SELETOR DE TAMANHO ── */}
+        {seletorTamanho && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-6 sm:pb-0">
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setSeletorTamanho(null)}
+            />
+            <div className="relative bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Escolha o tamanho</p>
+              <p className="font-bold text-slate-900 text-base mb-5 leading-snug">{seletorTamanho.nome}</p>
+              <div className="space-y-3">
+                <button
+                  onClick={() => adicionarComTamanho(seletorTamanho, "medio")}
+                  className="w-full flex items-center justify-between px-5 py-4 rounded-2xl border-2 border-slate-200 hover:border-current v-hover transition-all duration-200"
+                >
+                  <div className="text-left">
+                    <p className="font-semibold text-slate-900 text-sm">Médio</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Pão de Dog</p>
+                  </div>
+                  <span className="font-bold v-text text-base">{fmt(seletorTamanho.precoMedio!)}</span>
+                </button>
+                <button
+                  onClick={() => adicionarComTamanho(seletorTamanho, "grande")}
+                  className="w-full flex items-center justify-between px-5 py-4 rounded-2xl border-2 border-slate-200 hover:border-current v-hover transition-all duration-200"
+                >
+                  <div className="text-left">
+                    <p className="font-semibold text-slate-900 text-sm">Grande</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Pão Francês ou Hamburguer</p>
+                  </div>
+                  <span className="font-bold v-text text-base">{fmt(seletorTamanho.preco)}</span>
+                </button>
+              </div>
+              <button
+                onClick={() => setSeletorTamanho(null)}
+                className="mt-4 w-full text-sm text-slate-400 hover:text-slate-600 py-2 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </>

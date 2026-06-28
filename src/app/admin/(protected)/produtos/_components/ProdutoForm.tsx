@@ -9,10 +9,12 @@ type Categoria = { id: string; nome: string };
 type Props = {
   action: (formData: FormData) => Promise<void>;
   categorias: Categoria[];
+  tipoEmpresa?: string;
   defaults?: {
     nome?: string;
     descricao?: string;
     preco?: string;
+    precoMedio?: string;
     categoriaId?: string;
     imagemUrl?: string | null;
   };
@@ -30,7 +32,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function ProdutoForm({ action, categorias, defaults = {}, submitLabel }: Props) {
+export default function ProdutoForm({ action, categorias, tipoEmpresa, defaults = {}, submitLabel }: Props) {
   return (
     <form action={action} className="divide-y divide-slate-100 dark:divide-slate-700/50">
 
@@ -73,7 +75,7 @@ export default function ProdutoForm({ action, categorias, defaults = {}, submitL
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5">
-              Preço (R$) <span className="text-red-500">*</span>
+              Preço Grande (R$) <span className="text-red-500">*</span>
             </label>
             <input
               name="preco"
@@ -87,24 +89,41 @@ export default function ProdutoForm({ action, categorias, defaults = {}, submitL
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5">
-              Categoria <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="categoriaId"
-              required
-              defaultValue={defaults.categoriaId}
-              className={`${inp} cursor-pointer`}
-            >
-              <option value="">Selecione…</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
-          </div>
+          {tipoEmpresa === "LANCHONETE" && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5">
+                Preço Médio — Pão de Dog (R$)
+              </label>
+              <input
+                name="precoMedio"
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue={defaults.precoMedio}
+                placeholder="Deixe vazio se não tiver"
+                className={inp}
+              />
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5">
+            Categoria <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="categoriaId"
+            required
+            defaultValue={defaults.categoriaId}
+            className={`${inp} cursor-pointer`}
+          >
+            <option value="">Selecione…</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

@@ -9,11 +9,13 @@ export async function criarProduto(formData: FormData) {
   const session = await auth();
   if (!session) throw new Error("Não autorizado");
 
+  const precoMedioRaw = formData.get("precoMedio") as string;
   await prisma.produto.create({
     data: {
       nome: formData.get("nome") as string,
       descricao: (formData.get("descricao") as string) || null,
       preco: parseFloat(formData.get("preco") as string),
+      precoMedio: precoMedioRaw ? parseFloat(precoMedioRaw) : null,
       imagemUrl: (formData.get("imagemUrl") as string) || null,
       categoriaId: formData.get("categoriaId") as string,
       empresaId: session.user.empresaId,
@@ -28,12 +30,14 @@ export async function atualizarProduto(id: string, formData: FormData) {
   const session = await auth();
   if (!session) throw new Error("Não autorizado");
 
+  const precoMedioRaw = formData.get("precoMedio") as string;
   await prisma.produto.update({
     where: { id, empresaId: session.user.empresaId },
     data: {
       nome: formData.get("nome") as string,
       descricao: (formData.get("descricao") as string) || null,
       preco: parseFloat(formData.get("preco") as string),
+      precoMedio: precoMedioRaw ? parseFloat(precoMedioRaw) : null,
       imagemUrl: (formData.get("imagemUrl") as string) || null,
       categoriaId: formData.get("categoriaId") as string,
     },

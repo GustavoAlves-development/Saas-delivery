@@ -18,6 +18,7 @@ model Empresa {
   horarioFuncionamento  String?
   paletaCor             String            @default("rose")
   corFundo              String            @default("#f9fafb")
+  tipo                  TipoEmpresa       @default(LANCHONETE)
   plano                 String            @default("basico")
   statusMensalidade     StatusMensalidade @default(TRIAL)
   vencimentoMensalidade DateTime?
@@ -71,6 +72,7 @@ model Produto {
   nome        String
   descricao   String?
   preco       Decimal   @db.Decimal(10, 2)
+  precoMedio  Decimal?  @db.Decimal(10, 2)
   imagemUrl   String?
   ativo       Boolean   @default(true)
   categoriaId String
@@ -136,4 +138,10 @@ enum StatusMensalidade {
   EM_DIA
   VENCIDA
   CANCELADA
+}
+
+enum TipoEmpresa {
+  LANCHONETE
+  PIZZARIA
+  RESTAURANTE
 }

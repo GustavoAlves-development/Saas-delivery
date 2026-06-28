@@ -7,10 +7,16 @@ import ProdutoForm from "../_components/ProdutoForm";
 export default async function NovoProdutoPage() {
   const session = await auth();
 
-  const categorias = await prisma.categoria.findMany({
-    where: { empresaId: session!.user.empresaId },
-    orderBy: { nome: "asc" },
-  });
+  const [categorias, empresa] = await Promise.all([
+    prisma.categoria.findMany({
+      where: { empresaId: session!.user.empresaId },
+      orderBy: { nome: "asc" },
+    }),
+    prisma.empresa.findUnique({
+      where: { id: session!.user.empresaId },
+      select: { tipo: true },
+    }),
+  ]);
 
   return (
     <div className="max-w-2xl">
@@ -25,6 +31,7 @@ export default async function NovoProdutoPage() {
         <ProdutoForm
           action={criarProduto}
           categorias={categorias}
+          tipoEmpresa={empresa?.tipo}
           submitLabel="Salvar Produto"
         />
       </div>

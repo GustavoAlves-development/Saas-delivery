@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { TipoEmpresa } from "@/generated/prisma";
 
 export async function salvarMensalidade(empresaId: string, fd: FormData) {
   const plano = fd.get("plano") as string;
@@ -54,4 +55,15 @@ export async function alterarStatusEmpresa(
 
   revalidatePath(`/superadmin/empresas/${empresaId}`);
   revalidatePath("/superadmin");
+}
+
+export async function salvarTipo(empresaId: string, fd: FormData) {
+  const tipo = fd.get("tipo") as TipoEmpresa;
+
+  await prisma.empresa.update({
+    where: { id: empresaId },
+    data: { tipo },
+  });
+
+  revalidatePath(`/superadmin/empresas/${empresaId}`);
 }

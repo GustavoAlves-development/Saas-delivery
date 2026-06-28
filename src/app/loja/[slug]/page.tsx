@@ -39,6 +39,7 @@ export default async function LojaPage({ params }: { params: Promise<{ slug: str
     ...empresa,
     taxaEntrega: empresa.taxaEntrega.toString(),
     paletaCor: empresa.paletaCor,
+    tipo: empresa.tipo,
   };
 
   const categoriasSerializadas = categoriasComProdutos.map((c) => ({
@@ -46,6 +47,7 @@ export default async function LojaPage({ params }: { params: Promise<{ slug: str
     produtos: c.produtos.map((p) => ({
       ...p,
       preco: p.preco.toString(),
+      precoMedio: p.precoMedio ? p.precoMedio.toString() : null,
     })),
   }));
 

@@ -13,7 +13,8 @@ import {
   DollarSign,
 } from "lucide-react";
 import { StatusMensalidade } from "@/generated/prisma";
-import { salvarMensalidade, registrarPagamento } from "./actions";
+import { salvarMensalidade, registrarPagamento, salvarTipo } from "./actions";
+import { Store } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,7 @@ export default async function EmpresaDetailPage({
 
   const salvarAction = salvarMensalidade.bind(null, id);
   const pagarAction = registrarPagamento.bind(null, id);
+  const salvarTipoAction = salvarTipo.bind(null, id);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -192,6 +194,30 @@ export default async function EmpresaDetailPage({
               Salvar alterações
             </button>
           </div>
+        </form>
+      </div>
+
+      {/* Tipo da loja */}
+      <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5">
+        <h2 className="text-sm font-semibold text-white flex items-center gap-2 mb-5">
+          <Store size={16} className="text-violet-400" />
+          Tipo da Loja
+        </h2>
+        <form action={salvarTipoAction} className="flex items-end gap-4">
+          <div className="flex-1">
+            <label className={labelCls}>Categoria do negócio</label>
+            <select name="tipo" defaultValue={empresa.tipo} className={inputCls}>
+              <option value="LANCHONETE">Lanchonete</option>
+              <option value="PIZZARIA">Pizzaria</option>
+              <option value="RESTAURANTE">Restaurante</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            className="bg-violet-600 hover:bg-violet-700 active:scale-[0.98] text-white font-semibold px-5 py-2.5 rounded-xl transition-all text-sm"
+          >
+            Salvar
+          </button>
         </form>
       </div>
 
