@@ -33,6 +33,7 @@ export default async function LojaPage({ params }: { params: Promise<{ slug: str
   const [adicionais, acompanhamentos] = await Promise.all([
     prisma.acompanhamento.findMany({
       where: { empresaId: empresa.id, ativo: true, tipo: "ADICIONAL" },
+      include: { categorias: true },
       orderBy: { nome: "asc" },
     }),
     prisma.acompanhamento.findMany({
@@ -57,19 +58,27 @@ export default async function LojaPage({ params }: { params: Promise<{ slug: str
     })),
   }));
 
-  const serialize = (a: typeof adicionais[0]) => ({
+  const serializeAcomp = (a: typeof acompanhamentos[0]) => ({
     id: a.id,
     nome: a.nome,
     preco: a.preco.toString(),
     imagemUrl: a.imagemUrl,
   });
 
+  const serializeAdicional = (a: typeof adicionais[0]) => ({
+    id: a.id,
+    nome: a.nome,
+    preco: a.preco.toString(),
+    imagemUrl: a.imagemUrl,
+    categoriaIds: a.categorias.map((c) => c.id),
+  });
+
   return (
     <Vitrine
       empresa={serialized}
       categorias={categoriasSerializadas}
-      adicionais={adicionais.map(serialize)}
-      acompanhamentos={acompanhamentos.map(serialize)}
+      adicionais={adicionais.map(serializeAdicional)}
+      acompanhamentos={acompanhamentos.map(serializeAcomp)}
     />
   );
 }

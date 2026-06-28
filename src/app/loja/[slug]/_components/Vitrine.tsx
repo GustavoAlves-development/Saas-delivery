@@ -61,6 +61,7 @@ type Acompanhamento = {
   nome: string;
   preco: string;
   imagemUrl: string | null;
+  categoriaIds?: string[];
 };
 
 type Categoria = {
@@ -712,9 +713,15 @@ export default function Vitrine({
     [empresa.slug]
   );
 
+  function adicionaisDoProduto(categoriaId: string) {
+    return adicionais.filter(
+      (a) => !a.categoriaIds || a.categoriaIds.length === 0 || a.categoriaIds.includes(categoriaId)
+    );
+  }
+
   function abrirConfigurador(produto: Produto) {
     const precisaTamanho = empresa.tipo === "LANCHONETE" && !!produto.precoMedio;
-    if (precisaTamanho || adicionais.length > 0) {
+    if (precisaTamanho || adicionaisDoProduto(produto.categoriaId).length > 0) {
       setConfiguradorProduto(produto);
       setConfiguradorTamanho(undefined);
       setConfiguradorAdicionais(new Set());
@@ -745,7 +752,7 @@ export default function Vitrine({
     const basePreco = configuradorTamanho === "medio" && configuradorProduto.precoMedio
       ? configuradorProduto.precoMedio
       : configuradorProduto.preco;
-    const adicionaisSel = adicionais.filter((a) => configuradorAdicionais.has(a.id));
+    const adicionaisSel = adicionaisDoProduto(configuradorProduto.categoriaId).filter((a) => configuradorAdicionais.has(a.id));
     const extrasTotal = adicionaisSel.reduce((s, a) => s + Number(a.preco), 0);
     const precoEfetivo = (Number(basePreco) + extrasTotal).toFixed(2);
     const adicionaisKey = [...configuradorAdicionais].sort().join(",");
@@ -1037,7 +1044,7 @@ export default function Vitrine({
                 <div className="grid grid-cols-2 gap-3">
                   {cat.produtos.map((produto) => {
                     const qtdTotal = itens.filter((i) => i.produto.id === produto.id).reduce((s, i) => s + i.quantidade, 0);
-                    const temConfig = (empresa.tipo === "LANCHONETE" && !!produto.precoMedio) || adicionais.length > 0;
+                    const temConfig = (empresa.tipo === "LANCHONETE" && !!produto.precoMedio) || adicionaisDoProduto(produto.categoriaId).length > 0;
                     const itemSimples = !temConfig ? itens.find((i) => i.produto.id === produto.id) : null;
                     const qtd = itemSimples?.quantidade ?? 0;
                     const temDescricao = !!produto.descricao;
@@ -1233,7 +1240,7 @@ export default function Vitrine({
           const basePreco = configuradorTamanho === "medio" && configuradorProduto.precoMedio
             ? Number(configuradorProduto.precoMedio)
             : Number(configuradorProduto.preco);
-          const extrasTotal = adicionais
+          const extrasTotal = adicionaisDoProduto(configuradorProduto.categoriaId)
             .filter((a) => configuradorAdicionais.has(a.id))
             .reduce((s, a) => s + Number(a.preco), 0);
           const totalModal = basePreco + extrasTotal;
@@ -1285,11 +1292,11 @@ export default function Vitrine({
                   )}
 
                   {/* Adicionais */}
-                  {adicionais.length > 0 && (
+                  {configuradorProduto && adicionaisDoProduto(configuradorProduto.categoriaId).length > 0 && (
                     <div>
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Adicionais <span className="text-slate-400 normal-case font-normal">opcional</span></p>
                       <div className="space-y-2">
-                        {adicionais.map((a) => {
+                        {adicionaisDoProduto(configuradorProduto.categoriaId).map((a) => {
                           const sel = configuradorAdicionais.has(a.id);
                           return (
                             <button

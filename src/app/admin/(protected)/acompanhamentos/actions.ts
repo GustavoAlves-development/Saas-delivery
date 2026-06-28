@@ -55,6 +55,20 @@ export async function toggleAcompanhamentoAtivo(id: string, ativo: boolean) {
   revalidatePath("/admin/adicionais");
 }
 
+export async function atualizarCategoriasAdicional(id: string, categoriaIds: string[]) {
+  const session = await auth();
+  if (!session) throw new Error("Não autorizado");
+
+  await prisma.acompanhamento.update({
+    where: { id, empresaId: session.user.empresaId },
+    data: {
+      categorias: { set: categoriaIds.map((cid) => ({ id: cid })) },
+    },
+  });
+
+  revalidatePath("/admin/adicionais");
+}
+
 export async function excluirAcompanhamento(id: string) {
   const session = await auth();
   if (!session) throw new Error("Não autorizado");
