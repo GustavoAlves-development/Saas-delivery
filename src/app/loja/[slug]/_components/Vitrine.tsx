@@ -88,6 +88,7 @@ type ItemCarrinho = {
   quantidade: number;
   tamanho?: Tamanho;
   precoEfetivo: string;
+  adicionais: Acompanhamento[];
 };
 type FormaPagamento = "Dinheiro" | "Cartão de Débito" | "Cartão de Crédito" | "PIX";
 type TipoEntrega = "entrega" | "retirada";
@@ -162,7 +163,8 @@ function gerarMensagemWhatsApp(
   const linhasItens = itens
     .map((i) => {
       const label = i.tamanho ? ` (${i.tamanho === "grande" ? "Grande" : "Médio"})` : "";
-      return `• ${i.quantidade}x ${i.produto.nome}${label} — ${fmt(Number(i.precoEfetivo) * i.quantidade)}`;
+      const extras = i.adicionais.length > 0 ? ` + ${i.adicionais.map((a) => a.nome).join(", ")}` : "";
+      return `• ${i.quantidade}x ${i.produto.nome}${label}${extras} — ${fmt(Number(i.precoEfetivo) * i.quantidade)}`;
     })
     .join("\n");
   const subtotal = itens.reduce((s, i) => s + Number(i.precoEfetivo) * i.quantidade, 0);
@@ -353,6 +355,11 @@ function Carrinho({
                       )}
                       {fmt(item.precoEfetivo)} cada
                     </p>
+                    {item.adicionais.length > 0 && (
+                      <p className="text-xs v-text mt-0.5 font-medium">
+                        + {item.adicionais.map((a) => a.nome).join(", ")}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
@@ -676,7 +683,9 @@ export default function Vitrine({
   const [carrinhoAberto, setCarrinhoAberto] = useState(false);
   const [pedidoEnviado, setPedidoEnviado] = useState(false);
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("");
-  const [seletorTamanho, setSeletorTamanho] = useState<Produto | null>(null);
+  const [configuradorProduto, setConfiguradorProduto] = useState<Produto | null>(null);
+  const [configuradorTamanho, setConfiguradorTamanho] = useState<Tamanho | undefined>(undefined);
+  const [configuradorAdicionais, setConfiguradorAdicionais] = useState<Set<string>>(new Set());
   const horario = parsedHorario(empresa.horarioFuncionamento);
   const hoje = horario?.find((d) => d.dia === DIAS[new Date().getDay()]);
   const aberto = estaAbertoAgora(hoje);
@@ -697,24 +706,52 @@ export default function Vitrine({
     [empresa.slug]
   );
 
-  function adicionarProduto(produto: Produto) {
-    if (empresa.tipo === "LANCHONETE" && produto.precoMedio) {
-      setSeletorTamanho(produto);
+  function abrirConfigurador(produto: Produto) {
+    const precisaTamanho = empresa.tipo === "LANCHONETE" && !!produto.precoMedio;
+    if (precisaTamanho || acompanhamentos.length > 0) {
+      setConfiguradorProduto(produto);
+      setConfiguradorTamanho(undefined);
+      setConfiguradorAdicionais(new Set());
       return;
     }
-    adicionarComTamanho(produto, undefined);
-  }
-
-  function adicionarComTamanho(produto: Produto, tamanho: Tamanho | undefined) {
-    const chave = `${produto.id}_${tamanho ?? ""}`;
-    const precoEfetivo = tamanho === "medio" && produto.precoMedio ? produto.precoMedio : produto.preco;
+    const chave = `${produto.id}__`;
     const existe = itens.find((i) => i.chave === chave);
     if (existe) {
       salvar(itens.map((i) => i.chave === chave ? { ...i, quantidade: i.quantidade + 1 } : i));
     } else {
-      salvar([...itens, { chave, produto, quantidade: 1, tamanho, precoEfetivo }]);
+      salvar([...itens, { chave, produto, quantidade: 1, tamanho: undefined, precoEfetivo: produto.preco, adicionais: [] }]);
     }
-    setSeletorTamanho(null);
+  }
+
+  function toggleAdicionalConfigurador(id: string) {
+    setConfiguradorAdicionais((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function confirmarConfig() {
+    if (!configuradorProduto) return;
+    const precisaTamanho = empresa.tipo === "LANCHONETE" && !!configuradorProduto.precoMedio;
+    if (precisaTamanho && !configuradorTamanho) return;
+
+    const basePreco = configuradorTamanho === "medio" && configuradorProduto.precoMedio
+      ? configuradorProduto.precoMedio
+      : configuradorProduto.preco;
+    const adicionaisSel = acompanhamentos.filter((a) => configuradorAdicionais.has(a.id));
+    const extrasTotal = adicionaisSel.reduce((s, a) => s + Number(a.preco), 0);
+    const precoEfetivo = (Number(basePreco) + extrasTotal).toFixed(2);
+    const adicionaisKey = [...configuradorAdicionais].sort().join(",");
+    const chave = `${configuradorProduto.id}_${configuradorTamanho ?? ""}_${adicionaisKey}`;
+
+    const existe = itens.find((i) => i.chave === chave);
+    if (existe) {
+      salvar(itens.map((i) => i.chave === chave ? { ...i, quantidade: i.quantidade + 1 } : i));
+    } else {
+      salvar([...itens, { chave, produto: configuradorProduto, quantidade: 1, tamanho: configuradorTamanho, precoEfetivo, adicionais: adicionaisSel }]);
+    }
+    setConfiguradorProduto(null);
   }
 
   function alterarQuantidade(chave: string, delta: number) {
@@ -737,12 +774,12 @@ export default function Vitrine({
         : `${form.rua}, ${form.numero}${form.complemento ? ` - ${form.complemento}` : ""}, ${form.bairro}, CEP ${form.cep}`;
 
     const itensApi = [
-      ...itens.map((i) => ({
-        produtoId: i.produto.id,
-        nomeProduto: i.tamanho ? `${i.produto.nome} (${i.tamanho === "grande" ? "Grande" : "Médio"})` : i.produto.nome,
-        preco: i.precoEfetivo,
-        quantidade: i.quantidade,
-      })),
+      ...itens.map((i) => {
+        let nomeProduto = i.produto.nome;
+        if (i.tamanho) nomeProduto += ` (${i.tamanho === "grande" ? "Grande" : "Médio"})`;
+        if (i.adicionais.length > 0) nomeProduto += ` + ${i.adicionais.map((a) => a.nome).join(", ")}`;
+        return { produtoId: i.produto.id, nomeProduto, preco: i.precoEfetivo, quantidade: i.quantidade };
+      }),
       ...acompSelecionados.map((a) => ({ produtoId: a.id, nomeProduto: a.nome, preco: a.preco, quantidade: 1 })),
     ];
 
@@ -994,9 +1031,9 @@ export default function Vitrine({
                 <div className="grid grid-cols-2 gap-3">
                   {cat.produtos.map((produto) => {
                     const qtdTotal = itens.filter((i) => i.produto.id === produto.id).reduce((s, i) => s + i.quantidade, 0);
-                    const temTamanho = empresa.tipo === "LANCHONETE" && !!produto.precoMedio;
-                    const itemUnico = !temTamanho ? itens.find((i) => i.produto.id === produto.id) : null;
-                    const qtd = itemUnico?.quantidade ?? 0;
+                    const temConfig = (empresa.tipo === "LANCHONETE" && !!produto.precoMedio) || acompanhamentos.length > 0;
+                    const itemSimples = !temConfig ? itens.find((i) => i.produto.id === produto.id) : null;
+                    const qtd = itemSimples?.quantidade ?? 0;
                     const temDescricao = !!produto.descricao;
                     return (
                       <div
@@ -1049,7 +1086,7 @@ export default function Vitrine({
 
                           {/* Preço */}
                           <div className={`font-bold v-text text-sm`}>
-                            {temTamanho ? (
+                            {empresa.tipo === "LANCHONETE" && produto.precoMedio ? (
                               <span>
                                 {fmt(produto.precoMedio!)}
                                 <span className="text-slate-400 font-normal text-xs"> / </span>
@@ -1063,11 +1100,11 @@ export default function Vitrine({
 
                         {/* Botão/Controle */}
                         <div className={`${temDescricao ? "flex-shrink-0 self-center" : "w-full"}`}>
-                          {temTamanho ? (
+                          {temConfig ? (
                             aberto ? (
                               <div className="relative inline-flex">
                                 <button
-                                  onClick={() => adicionarProduto(produto)}
+                                  onClick={() => abrirConfigurador(produto)}
                                   className={`flex items-center justify-center gap-1.5 v-btn active:scale-95 font-semibold rounded-lg transition-all duration-200 v-shadow ${
                                     temDescricao ? "text-sm px-4 py-2.5" : "w-full text-xs px-3 py-2"
                                   }`}
@@ -1089,7 +1126,7 @@ export default function Vitrine({
                           ) : qtd === 0 ? (
                             aberto ? (
                               <button
-                                onClick={() => adicionarProduto(produto)}
+                                onClick={() => abrirConfigurador(produto)}
                                 className={`flex items-center justify-center gap-1.5 v-btn active:scale-95 font-semibold rounded-lg transition-all duration-200 v-shadow ${
                                   temDescricao
                                     ? "text-sm px-4 py-2.5"
@@ -1117,7 +1154,7 @@ export default function Vitrine({
                               }`}
                             >
                               <button
-                                onClick={() => alterarQuantidade(itemUnico!.chave, -1)}
+                                onClick={() => alterarQuantidade(itemSimples!.chave, -1)}
                                 className="w-6 h-6 rounded-md bg-white shadow-sm flex items-center justify-center text-slate-600 v-hover transition-colors flex-shrink-0"
                               >
                                 <Minus size={11} />
@@ -1126,7 +1163,7 @@ export default function Vitrine({
                                 {qtd}
                               </span>
                               <button
-                                onClick={() => alterarQuantidade(itemUnico!.chave, 1)}
+                                onClick={() => alterarQuantidade(itemSimples!.chave, 1)}
                                 className="w-6 h-6 rounded-md v-btn flex items-center justify-center transition-colors flex-shrink-0"
                               >
                                 <Plus size={11} />
@@ -1184,47 +1221,121 @@ export default function Vitrine({
           />
         )}
 
-        {/* ── SELETOR DE TAMANHO ── */}
-        {seletorTamanho && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-6 sm:pb-0">
-            <div
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setSeletorTamanho(null)}
-            />
-            <div className="relative bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Escolha o tamanho</p>
-              <p className="font-bold text-slate-900 text-base mb-5 leading-snug">{seletorTamanho.nome}</p>
-              <div className="space-y-3">
-                <button
-                  onClick={() => adicionarComTamanho(seletorTamanho, "medio")}
-                  className="w-full flex items-center justify-between px-5 py-4 rounded-2xl border-2 border-slate-200 hover:border-current v-hover transition-all duration-200"
-                >
-                  <div className="text-left">
-                    <p className="font-semibold text-slate-900 text-sm">Médio</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Pão de Dog</p>
+        {/* ── CONFIGURADOR DE ITEM ── */}
+        {configuradorProduto && (() => {
+          const precisaTamanho = empresa.tipo === "LANCHONETE" && !!configuradorProduto.precoMedio;
+          const basePreco = configuradorTamanho === "medio" && configuradorProduto.precoMedio
+            ? Number(configuradorProduto.precoMedio)
+            : Number(configuradorProduto.preco);
+          const extrasTotal = acompanhamentos
+            .filter((a) => configuradorAdicionais.has(a.id))
+            .reduce((s, a) => s + Number(a.preco), 0);
+          const totalModal = basePreco + extrasTotal;
+          const podeAdicionar = !precisaTamanho || !!configuradorTamanho;
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-6 sm:pb-0">
+              <div
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={() => setConfiguradorProduto(null)}
+              />
+              <div className="relative bg-white rounded-3xl w-full max-w-sm shadow-2xl max-h-[88vh] flex flex-col">
+                {/* Header */}
+                <div className="px-6 pt-6 pb-4 border-b border-slate-100">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Configurar item</p>
+                  <p className="font-bold text-slate-900 text-base leading-snug">{configuradorProduto.nome}</p>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+                  {/* Tamanho */}
+                  {precisaTamanho && (
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Tamanho <span className="text-red-400 normal-case font-normal">obrigatório</span></p>
+                      <div className="space-y-2">
+                        {([
+                          { valor: "medio" as Tamanho, label: "Médio", sub: "Pão de Dog", preco: configuradorProduto.precoMedio! },
+                          { valor: "grande" as Tamanho, label: "Grande", sub: "Pão Francês ou Hamburguer", preco: configuradorProduto.preco },
+                        ]).map((op) => (
+                          <button
+                            key={op.valor}
+                            onClick={() => setConfiguradorTamanho(op.valor)}
+                            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border-2 transition-all duration-200 ${
+                              configuradorTamanho === op.valor
+                                ? "v-selected"
+                                : "border-slate-200 hover:border-slate-300 bg-white"
+                            }`}
+                          >
+                            <div className="text-left">
+                              <p className="font-semibold text-slate-900 text-sm">{op.label}</p>
+                              <p className="text-xs text-slate-400 mt-0.5">{op.sub}</p>
+                            </div>
+                            <span className={`font-bold text-sm ${configuradorTamanho === op.valor ? "v-text" : "text-slate-700"}`}>
+                              {fmt(op.preco)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Adicionais */}
+                  {acompanhamentos.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Adicionais <span className="text-slate-400 normal-case font-normal">opcional</span></p>
+                      <div className="space-y-2">
+                        {acompanhamentos.map((a) => {
+                          const sel = configuradorAdicionais.has(a.id);
+                          return (
+                            <button
+                              key={a.id}
+                              type="button"
+                              onClick={() => toggleAdicionalConfigurador(a.id)}
+                              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 text-sm transition-all duration-200 ${
+                                sel ? "v-selected" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                              }`}
+                            >
+                              <span className="flex items-center gap-2.5">
+                                <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${sel ? "v-icon" : "border-slate-300"}`}>
+                                  {sel && <CheckCircle2 size={12} className="text-white" strokeWidth={3} />}
+                                </span>
+                                <span className="font-medium">{a.nome}</span>
+                              </span>
+                              <span className={`font-semibold text-xs ${sel ? "v-text" : "text-slate-400"}`}>
+                                {Number(a.preco) > 0 ? `+ ${fmt(a.preco)}` : "Grátis"}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 pb-6 pt-4 border-t border-slate-100 space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Total por item</span>
+                    <span className="font-bold v-text text-base">{fmt(totalModal)}</span>
                   </div>
-                  <span className="font-bold v-text text-base">{fmt(seletorTamanho.precoMedio!)}</span>
-                </button>
-                <button
-                  onClick={() => adicionarComTamanho(seletorTamanho, "grande")}
-                  className="w-full flex items-center justify-between px-5 py-4 rounded-2xl border-2 border-slate-200 hover:border-current v-hover transition-all duration-200"
-                >
-                  <div className="text-left">
-                    <p className="font-semibold text-slate-900 text-sm">Grande</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Pão Francês ou Hamburguer</p>
-                  </div>
-                  <span className="font-bold v-text text-base">{fmt(seletorTamanho.preco)}</span>
-                </button>
+                  <button
+                    onClick={confirmarConfig}
+                    disabled={!podeAdicionar}
+                    className="w-full v-btn active:scale-[0.98] font-semibold py-3.5 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 v-shadow disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Plus size={16} />
+                    Adicionar ao carrinho
+                  </button>
+                  <button
+                    onClick={() => setConfiguradorProduto(null)}
+                    className="w-full text-sm text-slate-400 hover:text-slate-600 py-1.5 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={() => setSeletorTamanho(null)}
-                className="mt-4 w-full text-sm text-slate-400 hover:text-slate-600 py-2 transition-colors"
-              >
-                Cancelar
-              </button>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </>
   );
