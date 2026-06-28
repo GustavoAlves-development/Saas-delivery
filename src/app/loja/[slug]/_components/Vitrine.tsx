@@ -529,6 +529,9 @@ function Carrinho({
                             >
                               {sel && <CheckCircle2 size={12} className="text-white" strokeWidth={3} />}
                             </span>
+                            {a.imagemUrl && (
+                              <img src={a.imagemUrl} alt={a.nome} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                            )}
                             <span className="font-medium">{a.nome}</span>
                           </span>
                           <span className={`font-semibold text-xs ${sel ? "v-text" : "text-slate-400"}`}>
