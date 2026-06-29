@@ -28,6 +28,7 @@ import {
   CalendarClock,
   Sun,
   Moon,
+  Search,
 } from "lucide-react";
 import { getPaleta } from "@/lib/paletas";
 import { useTheme } from "@/components/ThemeProvider";
@@ -691,6 +692,7 @@ export default function Vitrine({
   const [carrinhoAberto, setCarrinhoAberto] = useState(false);
   const [pedidoEnviado, setPedidoEnviado] = useState(false);
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("");
+  const [busca, setBusca] = useState("");
   const [configuradorProduto, setConfiguradorProduto] = useState<Produto | null>(null);
   const [configuradorTamanho, setConfiguradorTamanho] = useState<Tamanho | undefined>(undefined);
   const [configuradorAdicionais, setConfiguradorAdicionais] = useState<Set<string>>(new Set());
@@ -1003,8 +1005,28 @@ export default function Vitrine({
             </div>
           )}
 
+          {/* ── BUSCA ── */}
+          <div className="mb-4 relative">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <input
+              type="search"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Buscar em todo o cardápio…"
+              className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 shadow-sm v-ring"
+            />
+            {busca && (
+              <button
+                onClick={() => setBusca("")}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X size={15} />
+              </button>
+            )}
+          </div>
+
           {/* ── FILTRO DE CATEGORIAS ── */}
-          {categorias.length > 1 && (
+          {!busca && categorias.length > 1 && (
             <div className="mb-6 pb-4 border-b border-slate-200">
               <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
                 <button
@@ -1036,7 +1058,100 @@ export default function Vitrine({
 
           {/* ── CATÁLOGO ── */}
           <div className="space-y-10 pb-36">
-            {categorias
+            {busca ? (
+              /* Resultados da busca — todas as categorias */
+              (() => {
+                const termo = busca.toLowerCase();
+                const resultados = categorias.flatMap((cat) =>
+                  cat.produtos
+                    .filter(
+                      (p) =>
+                        p.nome.toLowerCase().includes(termo) ||
+                        (p.descricao ?? "").toLowerCase().includes(termo)
+                    )
+                    .map((p) => ({ produto: p, categoriaNome: cat.nome }))
+                );
+                return resultados.length === 0 ? (
+                  <div className="text-center py-16 text-slate-400">
+                    <Search size={32} className="mx-auto mb-3 opacity-40" />
+                    <p className="text-sm font-medium">Nenhum produto encontrado</p>
+                    <p className="text-xs mt-1">Tente outro termo</p>
+                  </div>
+                ) : (
+                  <section>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">
+                      {resultados.length} resultado{resultados.length !== 1 ? "s" : ""}
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {resultados.map(({ produto, categoriaNome }) => {
+                        const qtdTotal = itens.filter((i) => i.produto.id === produto.id).reduce((s, i) => s + i.quantidade, 0);
+                        const temConfig = (empresa.tipo === "LANCHONETE" && (!!produto.precoMedio || !!produto.precoMini)) || adicionaisDoProduto(produto.categoriaId).length > 0;
+                        const itemSimples = !temConfig ? itens.find((i) => i.produto.id === produto.id) : null;
+                        const qtd = itemSimples?.quantidade ?? 0;
+                        const temDescricao = !!produto.descricao;
+                        return (
+                          <div
+                            key={produto.id}
+                            className={`bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${
+                              temDescricao
+                                ? "col-span-2 p-4 flex gap-4 items-start"
+                                : "p-4 flex flex-col items-center gap-3 text-center justify-between"
+                            }`}
+                          >
+                            {produto.imagemUrl && (
+                              <div className="relative w-20 h-20 rounded-xl overflow-hidden shadow-sm flex-shrink-0">
+                                <Image src={produto.imagemUrl} alt={produto.nome} fill className="object-cover" unoptimized />
+                              </div>
+                            )}
+                            <div className={`${temDescricao ? "flex-1 min-w-0 flex flex-col justify-between gap-2" : "flex flex-col gap-1"}`}>
+                              <div>
+                                <span className="text-xs text-slate-400 font-medium">{categoriaNome}</span>
+                                <p className={`font-semibold text-slate-900 leading-snug ${temDescricao ? "text-sm" : "text-xs line-clamp-2"}`}>
+                                  {produto.nome}
+                                </p>
+                                {produto.descricao && (
+                                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mt-1">{produto.descricao}</p>
+                                )}
+                              </div>
+                              <div className="font-bold v-text text-sm">
+                                {empresa.tipo === "LANCHONETE" && produto.precoMedio ? (
+                                  <span>{fmt(produto.precoMedio!)}<span className="text-slate-400 font-normal text-xs"> / </span>{fmt(produto.preco)}</span>
+                                ) : fmt(produto.preco)}
+                              </div>
+                            </div>
+                            <div className={`${temDescricao ? "flex-shrink-0 self-center" : "w-full"}`}>
+                              {temConfig ? (
+                                aberto ? (
+                                  <div className="relative inline-flex">
+                                    <button onClick={() => abrirConfigurador(produto)} className={`flex items-center justify-center gap-1.5 v-btn active:scale-95 font-semibold rounded-lg transition-all duration-200 v-shadow ${temDescricao ? "text-sm px-4 py-2.5" : "w-full text-xs px-3 py-2"}`}>
+                                      <Plus size={16} />Adicionar
+                                    </button>
+                                    {qtdTotal > 0 && <span className="absolute -top-2 -right-2 v-btn text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center leading-none shadow-sm">{qtdTotal}</span>}
+                                  </div>
+                                ) : <span className={`text-xs text-slate-400 font-medium rounded-lg bg-slate-100 ${temDescricao ? "px-4 py-2.5 inline-block" : "w-full py-2 block text-center"}`}>Fechado</span>
+                              ) : qtd === 0 ? (
+                                aberto ? (
+                                  <button onClick={() => abrirConfigurador(produto)} className={`flex items-center justify-center gap-1.5 v-btn active:scale-95 font-semibold rounded-lg transition-all duration-200 v-shadow ${temDescricao ? "text-sm px-4 py-2.5" : "w-full text-xs px-3 py-2"}`}>
+                                    <Plus size={16} />Adicionar
+                                  </button>
+                                ) : <span className={`text-xs text-slate-400 font-medium rounded-lg bg-slate-100 ${temDescricao ? "px-4 py-2.5 inline-block" : "w-full py-2 block text-center"}`}>Fechado</span>
+                              ) : (
+                                <div className={`flex items-center gap-1.5 bg-slate-100 rounded-lg ${temDescricao ? "px-3 py-2" : "w-full px-2 py-1.5"}`}>
+                                  <button onClick={() => alterarQuantidade(itemSimples!.chave, -1)} className="w-6 h-6 rounded-md bg-white shadow-sm flex items-center justify-center text-slate-600 v-hover transition-colors flex-shrink-0"><Minus size={11} /></button>
+                                  <span className="text-xs font-bold text-slate-900 flex-1 text-center">{qtd}</span>
+                                  <button onClick={() => alterarQuantidade(itemSimples!.chave, 1)} className="w-6 h-6 rounded-md v-btn flex items-center justify-center transition-colors flex-shrink-0"><Plus size={11} /></button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })()
+            ) : (
+            categorias
               .filter((cat) => !categoriaFiltro || cat.id === categoriaFiltro)
               .map((cat) => (
               <section key={cat.id}>
@@ -1191,7 +1306,8 @@ export default function Vitrine({
                   })}
                 </div>
               </section>
-            ))}
+            ))
+            )}
           </div>
         </div>
 
