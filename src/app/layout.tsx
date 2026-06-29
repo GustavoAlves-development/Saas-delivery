@@ -16,9 +16,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Delivery",
   description: "Sistema de pedidos",
-  icons: {
-    icon: "/favicon.png",
-  },
 };
 
 export default function RootLayout({
@@ -33,7 +30,6 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <link rel="icon" type="image/png" href="/favicon.png" />
         {/*
           Anti-flash: aplica .dark antes do React hidratar.
           Admin usa chave "tema-admin" (padrão: segue sistema).
