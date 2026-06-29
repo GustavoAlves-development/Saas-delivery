@@ -25,7 +25,7 @@ export default async function LojaPage({ params }: { params: Promise<{ slug: str
         orderBy: { nome: "asc" },
       },
     },
-    orderBy: { nome: "asc" },
+    orderBy: { ordem: "asc" },
   });
 
   const categoriasComProdutos = categorias.filter((c) => c.produtos.length > 0);

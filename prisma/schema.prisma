@@ -60,6 +60,7 @@ model Usuario {
 model Categoria {
   id         String           @id @default(cuid())
   nome       String
+  ordem      Int              @default(0)
   empresaId  String
   empresa    Empresa          @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   produtos   Produto[]

@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { Plus, Save } from "lucide-react";
-import { criarCategoria, atualizarCategoria, excluirCategoria } from "./actions";
+import { ChevronDown, ChevronUp, Plus, Save } from "lucide-react";
+import { criarCategoria, atualizarCategoria, excluirCategoria, moverCategoria } from "./actions";
 import ConfirmDeleteButton from "../_components/ConfirmDeleteButton";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ export default async function CategoriasPage() {
   const categorias = await prisma.categoria.findMany({
     where: { empresaId: session!.user.empresaId },
     include: { _count: { select: { produtos: true } } },
-    orderBy: { nome: "asc" },
+    orderBy: { ordem: "asc" },
   });
 
   return (
@@ -48,11 +48,32 @@ export default async function CategoriasPage() {
           </p>
         ) : (
           <ul className="divide-y divide-gray-50 dark:divide-slate-700/50">
-            {categorias.map((categoria) => (
+            {categorias.map((categoria, idx) => (
               <li
                 key={categoria.id}
                 className="flex items-center gap-3 px-5 py-3"
               >
+                <div className="flex flex-col gap-0.5">
+                  <form action={moverCategoria.bind(null, categoria.id, "cima")}>
+                    <button
+                      type="submit"
+                      disabled={idx === 0}
+                      className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronUp size={14} />
+                    </button>
+                  </form>
+                  <form action={moverCategoria.bind(null, categoria.id, "baixo")}>
+                    <button
+                      type="submit"
+                      disabled={idx === categorias.length - 1}
+                      className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronDown size={14} />
+                    </button>
+                  </form>
+                </div>
+
                 <form
                   action={atualizarCategoria.bind(null, categoria.id)}
                   className="flex-1 flex gap-2"
