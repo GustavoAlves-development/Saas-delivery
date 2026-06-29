@@ -10,12 +10,14 @@ export async function criarProduto(formData: FormData) {
   if (!session) throw new Error("Não autorizado");
 
   const precoMedioRaw = formData.get("precoMedio") as string;
+  const precoMiniRaw = formData.get("precoMini") as string;
   await prisma.produto.create({
     data: {
       nome: formData.get("nome") as string,
       descricao: (formData.get("descricao") as string) || null,
       preco: parseFloat(formData.get("preco") as string),
       precoMedio: precoMedioRaw ? parseFloat(precoMedioRaw) : null,
+      precoMini: precoMiniRaw ? parseFloat(precoMiniRaw) : null,
       imagemUrl: (formData.get("imagemUrl") as string) || null,
       categoriaId: formData.get("categoriaId") as string,
       empresaId: session.user.empresaId,
@@ -31,6 +33,7 @@ export async function atualizarProduto(id: string, formData: FormData) {
   if (!session) throw new Error("Não autorizado");
 
   const precoMedioRaw = formData.get("precoMedio") as string;
+  const precoMiniRaw = formData.get("precoMini") as string;
   await prisma.produto.update({
     where: { id, empresaId: session.user.empresaId },
     data: {
@@ -38,6 +41,7 @@ export async function atualizarProduto(id: string, formData: FormData) {
       descricao: (formData.get("descricao") as string) || null,
       preco: parseFloat(formData.get("preco") as string),
       precoMedio: precoMedioRaw ? parseFloat(precoMedioRaw) : null,
+      precoMini: precoMiniRaw ? parseFloat(precoMiniRaw) : null,
       imagemUrl: (formData.get("imagemUrl") as string) || null,
       categoriaId: formData.get("categoriaId") as string,
     },

@@ -15,6 +15,7 @@ type Props = {
     descricao?: string;
     preco?: string;
     precoMedio?: string;
+    precoMini?: string;
     categoriaId?: string;
     imagemUrl?: string | null;
   };
@@ -106,6 +107,25 @@ export default function ProdutoForm({ action, categorias, tipoEmpresa, defaults 
             </div>
           )}
         </div>
+
+        {tipoEmpresa === "LANCHONETE" && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5">
+                Preço Mini — Pão Pequeno (R$)
+              </label>
+              <input
+                name="precoMini"
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue={defaults.precoMini}
+                placeholder="Deixe vazio se não tiver"
+                className={inp}
+              />
+            </div>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5">

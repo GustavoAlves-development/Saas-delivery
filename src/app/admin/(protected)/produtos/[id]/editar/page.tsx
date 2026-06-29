@@ -48,6 +48,7 @@ export default async function EditarProdutoPage({
             descricao: produto.descricao ?? "",
             preco: Number(produto.preco).toFixed(2),
             precoMedio: produto.precoMedio ? Number(produto.precoMedio).toFixed(2) : undefined,
+            precoMini: produto.precoMini ? Number(produto.precoMini).toFixed(2) : undefined,
             categoriaId: produto.categoriaId,
             imagemUrl: produto.imagemUrl,
           }}
