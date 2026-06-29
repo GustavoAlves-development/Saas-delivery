@@ -52,6 +52,7 @@ type Produto = {
   descricao: string | null;
   preco: string;
   precoMedio: string | null;
+  precoMini: string | null;
   imagemUrl: string | null;
   categoriaId: string;
 };
@@ -83,7 +84,7 @@ type Empresa = {
   tipo: string;
 };
 
-type Tamanho = "grande" | "medio";
+type Tamanho = "grande" | "medio" | "mini";
 type ItemCarrinho = {
   chave: string;
   produto: Produto;
@@ -164,7 +165,7 @@ function gerarMensagemWhatsApp(
 
   const linhasItens = itens
     .map((i) => {
-      const label = i.tamanho ? ` (${i.tamanho === "grande" ? "Grande" : "Médio"})` : "";
+      const label = i.tamanho ? ` (${i.tamanho === "grande" ? "Grande" : i.tamanho === "medio" ? "Médio" : "Mini"})` : "";
       const extras = i.adicionais.length > 0 ? ` + ${i.adicionais.map((a) => a.nome).join(", ")}` : "";
       return `• ${i.quantidade}x ${i.produto.nome}${label}${extras} — ${fmt(Number(i.precoEfetivo) * i.quantidade)}`;
     })
@@ -720,7 +721,7 @@ export default function Vitrine({
   }
 
   function abrirConfigurador(produto: Produto) {
-    const precisaTamanho = empresa.tipo === "LANCHONETE" && !!produto.precoMedio;
+    const precisaTamanho = empresa.tipo === "LANCHONETE" && (!!produto.precoMedio || !!produto.precoMini);
     if (precisaTamanho || adicionaisDoProduto(produto.categoriaId).length > 0) {
       setConfiguradorProduto(produto);
       setConfiguradorTamanho(undefined);
@@ -746,12 +747,13 @@ export default function Vitrine({
 
   function confirmarConfig() {
     if (!configuradorProduto) return;
-    const precisaTamanho = empresa.tipo === "LANCHONETE" && !!configuradorProduto.precoMedio;
+    const precisaTamanho = empresa.tipo === "LANCHONETE" && (!!configuradorProduto.precoMedio || !!configuradorProduto.precoMini);
     if (precisaTamanho && !configuradorTamanho) return;
 
-    const basePreco = configuradorTamanho === "medio" && configuradorProduto.precoMedio
-      ? configuradorProduto.precoMedio
-      : configuradorProduto.preco;
+    const basePreco =
+      configuradorTamanho === "mini" && configuradorProduto.precoMini ? configuradorProduto.precoMini :
+      configuradorTamanho === "medio" && configuradorProduto.precoMedio ? configuradorProduto.precoMedio :
+      configuradorProduto.preco;
     const adicionaisSel = adicionaisDoProduto(configuradorProduto.categoriaId).filter((a) => configuradorAdicionais.has(a.id));
     const extrasTotal = adicionaisSel.reduce((s, a) => s + Number(a.preco), 0);
     const precoEfetivo = (Number(basePreco) + extrasTotal).toFixed(2);
@@ -1044,7 +1046,7 @@ export default function Vitrine({
                 <div className="grid grid-cols-2 gap-3">
                   {cat.produtos.map((produto) => {
                     const qtdTotal = itens.filter((i) => i.produto.id === produto.id).reduce((s, i) => s + i.quantidade, 0);
-                    const temConfig = (empresa.tipo === "LANCHONETE" && !!produto.precoMedio) || adicionaisDoProduto(produto.categoriaId).length > 0;
+                    const temConfig = (empresa.tipo === "LANCHONETE" && (!!produto.precoMedio || !!produto.precoMini)) || adicionaisDoProduto(produto.categoriaId).length > 0;
                     const itemSimples = !temConfig ? itens.find((i) => i.produto.id === produto.id) : null;
                     const qtd = itemSimples?.quantidade ?? 0;
                     const temDescricao = !!produto.descricao;
@@ -1236,10 +1238,11 @@ export default function Vitrine({
 
         {/* ── CONFIGURADOR DE ITEM ── */}
         {configuradorProduto && (() => {
-          const precisaTamanho = empresa.tipo === "LANCHONETE" && !!configuradorProduto.precoMedio;
-          const basePreco = configuradorTamanho === "medio" && configuradorProduto.precoMedio
-            ? Number(configuradorProduto.precoMedio)
-            : Number(configuradorProduto.preco);
+          const precisaTamanho = empresa.tipo === "LANCHONETE" && (!!configuradorProduto.precoMedio || !!configuradorProduto.precoMini);
+          const basePreco =
+            configuradorTamanho === "mini" && configuradorProduto.precoMini ? Number(configuradorProduto.precoMini) :
+            configuradorTamanho === "medio" && configuradorProduto.precoMedio ? Number(configuradorProduto.precoMedio) :
+            Number(configuradorProduto.preco);
           const extrasTotal = adicionaisDoProduto(configuradorProduto.categoriaId)
             .filter((a) => configuradorAdicionais.has(a.id))
             .reduce((s, a) => s + Number(a.preco), 0);
@@ -1266,8 +1269,9 @@ export default function Vitrine({
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Tamanho <span className="text-red-400 normal-case font-normal">obrigatório</span></p>
                       <div className="space-y-2">
                         {([
-                          { valor: "medio" as Tamanho, label: "Médio", sub: "Pão de Dog", preco: configuradorProduto.precoMedio! },
                           { valor: "grande" as Tamanho, label: "Grande", sub: "Pão Francês ou Hamburguer", preco: configuradorProduto.preco },
+                          ...(configuradorProduto.precoMedio ? [{ valor: "medio" as Tamanho, label: "Médio", sub: "Pão de Dog", preco: configuradorProduto.precoMedio }] : []),
+                          ...(configuradorProduto.precoMini ? [{ valor: "mini" as Tamanho, label: "Mini", sub: "Pão Pequeno", preco: configuradorProduto.precoMini }] : []),
                         ]).map((op) => (
                           <button
                             key={op.valor}

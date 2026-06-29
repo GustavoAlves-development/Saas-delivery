@@ -55,6 +55,7 @@ export default async function LojaPage({ params }: { params: Promise<{ slug: str
       ...p,
       preco: p.preco.toString(),
       precoMedio: p.precoMedio ? p.precoMedio.toString() : null,
+      precoMini: p.precoMini ? p.precoMini.toString() : null,
     })),
   }));
 
