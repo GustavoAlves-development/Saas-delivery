@@ -1,6 +1,7 @@
 import { PrismaClient } from "../src/generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import bcrypt from "bcryptjs";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -19,10 +20,11 @@ async function main() {
   console.log(`Empresa: ${empresa.nome}`);
 
   // Criar usuário admin
+  const senhaHash = await bcrypt.hash("admin123", 10);
   await prisma.usuario.create({
     data: {
       email: "admin@lanchao.com",
-      senha: "admin123",
+      senha: senhaHash,
       empresaId: empresa.id,
     },
   });
