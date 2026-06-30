@@ -1402,9 +1402,9 @@ export default function Vitrine({
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Tamanho <span className="text-red-400 normal-case font-normal">obrigatório</span></p>
                       <div className="space-y-2">
                         {([
-                          { valor: "grande" as Tamanho, label: "Grande", sub: "Pão Francês ou Hamburguer", preco: configuradorProduto.preco },
-                          ...(configuradorProduto.precoMedio ? [{ valor: "medio" as Tamanho, label: "Médio", sub: "Pão de Dog", preco: configuradorProduto.precoMedio }] : []),
-                          ...(configuradorProduto.precoMini ? [{ valor: "mini" as Tamanho, label: "Mini", sub: "Pão Pequeno", preco: configuradorProduto.precoMini }] : []),
+                          { valor: "grande" as Tamanho, label: "Grande", sub: "Tamanho grande", preco: configuradorProduto.preco },
+                          ...(configuradorProduto.precoMedio ? [{ valor: "medio" as Tamanho, label: "Médio", sub: "Tamanho médio", preco: configuradorProduto.precoMedio }] : []),
+                          ...(configuradorProduto.precoMini ? [{ valor: "mini" as Tamanho, label: "Mini", sub: "Tamanho pequeno", preco: configuradorProduto.precoMini }] : []),
                         ]).map((op) => (
                           <button
                             key={op.valor}

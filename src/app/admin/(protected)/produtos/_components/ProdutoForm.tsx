@@ -109,7 +109,7 @@ export default function ProdutoForm({ action, categorias, tipoEmpresa, defaults 
           {tipoEmpresa === "LANCHONETE" && (
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5">
-                Preço Médio — Pão de Dog (R$)
+                Preço Médio (R$)
               </label>
               <input
                 name="precoMedio"
@@ -128,7 +128,7 @@ export default function ProdutoForm({ action, categorias, tipoEmpresa, defaults 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5">
-                Preço Mini — Pão Pequeno (R$)
+                Preço Mini (R$)
               </label>
               <input
                 name="precoMini"
