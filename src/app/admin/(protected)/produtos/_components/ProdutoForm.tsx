@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Save, ArrowLeft } from "lucide-react";
+import { Save, ArrowLeft, Plus, X } from "lucide-react";
 import ImageUpload from "../../_components/ImageUpload";
 
 type Categoria = { id: string; nome: string };
@@ -16,6 +17,7 @@ type Props = {
     preco?: string;
     precoMedio?: string;
     precoMini?: string;
+    tiposPao?: string[];
     categoriaId?: string;
     imagemUrl?: string | null;
   };
@@ -34,6 +36,20 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 export default function ProdutoForm({ action, categorias, tipoEmpresa, defaults = {}, submitLabel }: Props) {
+  const [tiposPao, setTiposPao] = useState<string[]>(defaults.tiposPao ?? []);
+  const [novoPao, setNovoPao] = useState("");
+
+  function adicionarTipo() {
+    const val = novoPao.trim();
+    if (!val || tiposPao.includes(val)) return;
+    setTiposPao([...tiposPao, val]);
+    setNovoPao("");
+  }
+
+  function removerTipo(tipo: string) {
+    setTiposPao(tiposPao.filter((t) => t !== tipo));
+  }
+
   return (
     <form action={action} className="divide-y divide-slate-100 dark:divide-slate-700/50">
 
@@ -146,6 +162,62 @@ export default function ProdutoForm({ action, categorias, tipoEmpresa, defaults 
           </select>
         </div>
       </div>
+
+      {/* ── Tipos de Pão (lanchonete) ── */}
+      {tipoEmpresa === "LANCHONETE" && (
+        <div className="py-6 space-y-4">
+          <SectionTitle>Tipos de Pão</SectionTitle>
+          <p className="text-xs text-slate-400 dark:text-slate-500 -mt-2">
+            Se aplicável, cadastre os tipos de pão disponíveis para este produto. O cliente poderá escolher um ao montar o pedido.
+          </p>
+
+          {/* inputs hidden para serialização */}
+          {tiposPao.map((tipo) => (
+            <input key={tipo} type="hidden" name="tiposPao" value={tipo} />
+          ))}
+
+          {/* lista atual */}
+          {tiposPao.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {tiposPao.map((tipo) => (
+                <span
+                  key={tipo}
+                  className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium px-3 py-1.5 rounded-full"
+                >
+                  {tipo}
+                  <button
+                    type="button"
+                    onClick={() => removerTipo(tipo)}
+                    className="text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* adicionar novo tipo */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={novoPao}
+              onChange={(e) => setNovoPao(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); adicionarTipo(); } }}
+              placeholder="Ex: Pão Francês, Pão Hamburguer…"
+              className={inp}
+            />
+            <button
+              type="button"
+              onClick={adicionarTipo}
+              className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium px-4 py-2.5 rounded-xl transition-all duration-200 text-sm whitespace-nowrap"
+            >
+              <Plus size={14} />
+              Adicionar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Imagem ── */}
       <div className="py-6">

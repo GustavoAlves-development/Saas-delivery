@@ -76,6 +76,7 @@ model Produto {
   preco       Decimal   @db.Decimal(10, 2)
   precoMedio  Decimal?  @db.Decimal(10, 2)
   precoMini   Decimal?  @db.Decimal(10, 2)
+  tiposPao    String[]
   imagemUrl   String?
   ativo       Boolean   @default(true)
   categoriaId String

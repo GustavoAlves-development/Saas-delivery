@@ -11,6 +11,7 @@ export async function criarProduto(formData: FormData) {
 
   const precoMedioRaw = formData.get("precoMedio") as string;
   const precoMiniRaw = formData.get("precoMini") as string;
+  const tiposPao = formData.getAll("tiposPao") as string[];
   await prisma.produto.create({
     data: {
       nome: formData.get("nome") as string,
@@ -18,6 +19,7 @@ export async function criarProduto(formData: FormData) {
       preco: parseFloat(formData.get("preco") as string),
       precoMedio: precoMedioRaw ? parseFloat(precoMedioRaw) : null,
       precoMini: precoMiniRaw ? parseFloat(precoMiniRaw) : null,
+      tiposPao,
       imagemUrl: (formData.get("imagemUrl") as string) || null,
       categoriaId: formData.get("categoriaId") as string,
       empresaId: session.user.empresaId,
@@ -34,6 +36,7 @@ export async function atualizarProduto(id: string, formData: FormData) {
 
   const precoMedioRaw = formData.get("precoMedio") as string;
   const precoMiniRaw = formData.get("precoMini") as string;
+  const tiposPao = formData.getAll("tiposPao") as string[];
   await prisma.produto.update({
     where: { id, empresaId: session.user.empresaId },
     data: {
@@ -42,6 +45,7 @@ export async function atualizarProduto(id: string, formData: FormData) {
       preco: parseFloat(formData.get("preco") as string),
       precoMedio: precoMedioRaw ? parseFloat(precoMedioRaw) : null,
       precoMini: precoMiniRaw ? parseFloat(precoMiniRaw) : null,
+      tiposPao,
       imagemUrl: (formData.get("imagemUrl") as string) || null,
       categoriaId: formData.get("categoriaId") as string,
     },

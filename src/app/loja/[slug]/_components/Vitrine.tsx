@@ -54,6 +54,7 @@ type Produto = {
   preco: string;
   precoMedio: string | null;
   precoMini: string | null;
+  tiposPao: string[];
   imagemUrl: string | null;
   categoriaId: string;
 };
@@ -91,6 +92,7 @@ type ItemCarrinho = {
   produto: Produto;
   quantidade: number;
   tamanho?: Tamanho;
+  tipoPao?: string;
   precoEfetivo: string;
   adicionais: Acompanhamento[];
 };
@@ -166,7 +168,9 @@ function gerarMensagemWhatsApp(
 
   const linhasItens = itens
     .map((i) => {
-      const label = i.tamanho ? ` (${i.tamanho === "grande" ? "Grande" : i.tamanho === "medio" ? "Médio" : "Mini"})` : "";
+      const labelTamanho = i.tamanho ? `${i.tamanho === "grande" ? "Grande" : i.tamanho === "medio" ? "Médio" : "Mini"}` : "";
+      const labelPao = i.tipoPao ? i.tipoPao : "";
+      const label = (labelTamanho || labelPao) ? ` (${[labelTamanho, labelPao].filter(Boolean).join(" · ")})` : "";
       const extras = i.adicionais.length > 0 ? ` + ${i.adicionais.map((a) => a.nome).join(", ")}` : "";
       return `• ${i.quantidade}x ${i.produto.nome}${label}${extras} — ${fmt(Number(i.precoEfetivo) * i.quantidade)}`;
     })
@@ -352,9 +356,12 @@ function Carrinho({
                       {item.produto.nome}
                     </p>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {item.tamanho && (
+                      {(item.tamanho || item.tipoPao) && (
                         <span className="mr-1 font-medium">
-                          {item.tamanho === "grande" ? "Grande ·" : "Médio ·"}
+                          {[
+                            item.tamanho ? (item.tamanho === "grande" ? "Grande" : item.tamanho === "medio" ? "Médio" : "Mini") : "",
+                            item.tipoPao ?? "",
+                          ].filter(Boolean).join(" · ")} ·
                         </span>
                       )}
                       {fmt(item.precoEfetivo)} cada
@@ -695,6 +702,7 @@ export default function Vitrine({
   const [busca, setBusca] = useState("");
   const [configuradorProduto, setConfiguradorProduto] = useState<Produto | null>(null);
   const [configuradorTamanho, setConfiguradorTamanho] = useState<Tamanho | undefined>(undefined);
+  const [configuradorTipoPao, setConfiguradorTipoPao] = useState<string | undefined>(undefined);
   const [configuradorAdicionais, setConfiguradorAdicionais] = useState<Set<string>>(new Set());
   const horario = parsedHorario(empresa.horarioFuncionamento);
   const hoje = horario?.find((d) => d.dia === DIAS[new Date().getDay()]);
@@ -724,9 +732,11 @@ export default function Vitrine({
 
   function abrirConfigurador(produto: Produto) {
     const precisaTamanho = empresa.tipo === "LANCHONETE" && (!!produto.precoMedio || !!produto.precoMini);
-    if (precisaTamanho || adicionaisDoProduto(produto.categoriaId).length > 0) {
+    const precisaTipoPaoLocal = empresa.tipo === "LANCHONETE" && produto.tiposPao.length > 0;
+    if (precisaTamanho || precisaTipoPaoLocal || adicionaisDoProduto(produto.categoriaId).length > 0) {
       setConfiguradorProduto(produto);
       setConfiguradorTamanho(undefined);
+      setConfiguradorTipoPao(undefined);
       setConfiguradorAdicionais(new Set());
       return;
     }
@@ -750,7 +760,9 @@ export default function Vitrine({
   function confirmarConfig() {
     if (!configuradorProduto) return;
     const precisaTamanho = empresa.tipo === "LANCHONETE" && (!!configuradorProduto.precoMedio || !!configuradorProduto.precoMini);
+    const precisaTipoPao = empresa.tipo === "LANCHONETE" && configuradorProduto.tiposPao.length > 0;
     if (precisaTamanho && !configuradorTamanho) return;
+    if (precisaTipoPao && !configuradorTipoPao) return;
 
     const basePreco =
       configuradorTamanho === "mini" && configuradorProduto.precoMini ? configuradorProduto.precoMini :
@@ -760,13 +772,13 @@ export default function Vitrine({
     const extrasTotal = adicionaisSel.reduce((s, a) => s + Number(a.preco), 0);
     const precoEfetivo = (Number(basePreco) + extrasTotal).toFixed(2);
     const adicionaisKey = [...configuradorAdicionais].sort().join(",");
-    const chave = `${configuradorProduto.id}_${configuradorTamanho ?? ""}_${adicionaisKey}`;
+    const chave = `${configuradorProduto.id}_${configuradorTamanho ?? ""}_${configuradorTipoPao ?? ""}_${adicionaisKey}`;
 
     const existe = itens.find((i) => i.chave === chave);
     if (existe) {
       salvar(itens.map((i) => i.chave === chave ? { ...i, quantidade: i.quantidade + 1 } : i));
     } else {
-      salvar([...itens, { chave, produto: configuradorProduto, quantidade: 1, tamanho: configuradorTamanho, precoEfetivo, adicionais: adicionaisSel }]);
+      salvar([...itens, { chave, produto: configuradorProduto, quantidade: 1, tamanho: configuradorTamanho, tipoPao: configuradorTipoPao, precoEfetivo, adicionais: adicionaisSel }]);
     }
     setConfiguradorProduto(null);
   }
@@ -793,7 +805,11 @@ export default function Vitrine({
     const itensApi = [
       ...itens.map((i) => {
         let nomeProduto = i.produto.nome;
-        if (i.tamanho) nomeProduto += ` (${i.tamanho === "grande" ? "Grande" : "Médio"})`;
+        const partes = [
+          i.tamanho ? (i.tamanho === "grande" ? "Grande" : i.tamanho === "medio" ? "Médio" : "Mini") : "",
+          i.tipoPao ?? "",
+        ].filter(Boolean);
+        if (partes.length > 0) nomeProduto += ` (${partes.join(" · ")})`;
         if (i.adicionais.length > 0) nomeProduto += ` + ${i.adicionais.map((a) => a.nome).join(", ")}`;
         return { produtoId: i.produto.id, nomeProduto, preco: i.precoEfetivo, quantidade: i.quantidade };
       }),
@@ -1085,7 +1101,7 @@ export default function Vitrine({
                     <div className="grid grid-cols-2 gap-3">
                       {resultados.map(({ produto, categoriaNome }) => {
                         const qtdTotal = itens.filter((i) => i.produto.id === produto.id).reduce((s, i) => s + i.quantidade, 0);
-                        const temConfig = (empresa.tipo === "LANCHONETE" && (!!produto.precoMedio || !!produto.precoMini)) || adicionaisDoProduto(produto.categoriaId).length > 0;
+                        const temConfig = (empresa.tipo === "LANCHONETE" && (!!produto.precoMedio || !!produto.precoMini || produto.tiposPao.length > 0)) || adicionaisDoProduto(produto.categoriaId).length > 0;
                         const itemSimples = !temConfig ? itens.find((i) => i.produto.id === produto.id) : null;
                         const qtd = itemSimples?.quantidade ?? 0;
                         const temDescricao = !!produto.descricao;
@@ -1161,7 +1177,7 @@ export default function Vitrine({
                 <div className="grid grid-cols-2 gap-3">
                   {cat.produtos.map((produto) => {
                     const qtdTotal = itens.filter((i) => i.produto.id === produto.id).reduce((s, i) => s + i.quantidade, 0);
-                    const temConfig = (empresa.tipo === "LANCHONETE" && (!!produto.precoMedio || !!produto.precoMini)) || adicionaisDoProduto(produto.categoriaId).length > 0;
+                    const temConfig = (empresa.tipo === "LANCHONETE" && (!!produto.precoMedio || !!produto.precoMini || produto.tiposPao.length > 0)) || adicionaisDoProduto(produto.categoriaId).length > 0;
                     const itemSimples = !temConfig ? itens.find((i) => i.produto.id === produto.id) : null;
                     const qtd = itemSimples?.quantidade ?? 0;
                     const temDescricao = !!produto.descricao;
@@ -1355,6 +1371,7 @@ export default function Vitrine({
         {/* ── CONFIGURADOR DE ITEM ── */}
         {configuradorProduto && (() => {
           const precisaTamanho = empresa.tipo === "LANCHONETE" && (!!configuradorProduto.precoMedio || !!configuradorProduto.precoMini);
+          const precisaTipoPao = empresa.tipo === "LANCHONETE" && configuradorProduto.tiposPao.length > 0;
           const basePreco =
             configuradorTamanho === "mini" && configuradorProduto.precoMini ? Number(configuradorProduto.precoMini) :
             configuradorTamanho === "medio" && configuradorProduto.precoMedio ? Number(configuradorProduto.precoMedio) :
@@ -1363,7 +1380,7 @@ export default function Vitrine({
             .filter((a) => configuradorAdicionais.has(a.id))
             .reduce((s, a) => s + Number(a.preco), 0);
           const totalModal = basePreco + extrasTotal;
-          const podeAdicionar = !precisaTamanho || !!configuradorTamanho;
+          const podeAdicionar = (!precisaTamanho || !!configuradorTamanho) && (!precisaTipoPao || !!configuradorTipoPao);
 
           return (
             <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-6 sm:pb-0">
@@ -1405,6 +1422,29 @@ export default function Vitrine({
                             <span className={`font-bold text-sm ${configuradorTamanho === op.valor ? "v-text" : "text-slate-700"}`}>
                               {fmt(op.preco)}
                             </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tipo de Pão */}
+                  {precisaTipoPao && (
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Tipo de Pão <span className="text-red-400 normal-case font-normal">obrigatório</span></p>
+                      <div className="flex flex-wrap gap-2">
+                        {configuradorProduto.tiposPao.map((tipo) => (
+                          <button
+                            key={tipo}
+                            type="button"
+                            onClick={() => setConfiguradorTipoPao(tipo)}
+                            className={`px-4 py-2.5 rounded-2xl border-2 text-sm font-semibold transition-all duration-200 ${
+                              configuradorTipoPao === tipo
+                                ? "v-selected"
+                                : "border-slate-200 hover:border-slate-300 bg-white text-slate-700"
+                            }`}
+                          >
+                            {tipo}
                           </button>
                         ))}
                       </div>
