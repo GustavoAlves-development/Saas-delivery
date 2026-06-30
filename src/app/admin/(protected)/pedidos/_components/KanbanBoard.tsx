@@ -56,7 +56,24 @@ function gerarComanda(pedido: Pedido, empresaNome: string, largura: 58 | 80) {
   const itensHtml = pedido.itens
     .map((item) => {
       const sub = brl(item.quantidade * Number(item.preco));
-      return `<div class="row"><span class="item-nome">${item.quantidade}x ${item.nomeProduto}</span><span class="nowrap">${sub}</span></div>`;
+      // nomeProduto format: "Nome (Tamanho · TipoPão) + Adicional1, Adicional2"
+      const addMatch = item.nomeProduto.match(/^(.*?)\s*\+\s*(.+)$/);
+      const semAdicionais = addMatch ? addMatch[1].trim() : item.nomeProduto;
+      const adicionais = addMatch ? addMatch[2].trim() : "";
+      const detMatch = semAdicionais.match(/^(.*?)\s*\((.+)\)$/);
+      const nomeBase = detMatch ? detMatch[1].trim() : semAdicionais;
+      const detalhes = detMatch ? detMatch[2].trim() : "";
+      // detalhes: "Tamanho · TipoPão" — split on ·
+      const partes = detalhes ? detalhes.split("·").map((p) => p.trim()) : [];
+      const tamanho = partes[0] ?? "";
+      const tipoPao = partes[1] ?? "";
+
+      return `<div class="item-bloco">
+  <div class="row"><span class="bold item-nome">${item.quantidade}x ${nomeBase}</span><span class="nowrap bold">${sub}</span></div>
+  ${tamanho ? `<div class="item-detalhe">Tamanho: <span class="bold">${tamanho}</span></div>` : ""}
+  ${tipoPao ? `<div class="item-detalhe">Pão: <span class="bold">${tipoPao}</span></div>` : ""}
+  ${adicionais ? `<div class="item-detalhe">+ <span class="bold">${adicionais}</span></div>` : ""}
+</div>`;
     })
     .join("");
 
@@ -68,11 +85,14 @@ function gerarComanda(pedido: Pedido, empresaNome: string, largura: 58 | 80) {
 <style>
   @page { size: ${pageW} auto; margin: 4mm 3mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Courier New', Courier, monospace; font-size: 11px; line-height: 1.5; color: #000; background: #fff; width: ${mm}; }
-  .center { text-align: center; } .bold { font-weight: bold; } .lg { font-size: 14px; } .sm { font-size: 10px; }
+  body { font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.6; color: #000; background: #fff; width: ${mm}; }
+  .center { text-align: center; } .bold { font-weight: bold; } .lg { font-size: 16px; } .sm { font-size: 11px; }
   .sep { border-top: 1px dashed #000; margin: 5px 0; }
   .row { display: flex; justify-content: space-between; gap: 4px; }
-  .item-nome { flex: 1; word-break: break-word; } .nowrap { white-space: nowrap; }
+  .item-nome { flex: 1; word-break: break-word; }
+  .item-detalhe { padding-left: 10px; font-size: 12px; }
+  .item-bloco { margin-bottom: 4px; }
+  .nowrap { white-space: nowrap; }
   .gap { margin-top: 4px; } .gap2 { margin-top: 8px; }
 </style>
 </head>
@@ -89,9 +109,9 @@ ${itensHtml}
 <div class="sep"></div>
 <div class="row bold lg gap"><span>TOTAL</span><span>${brl(Number(pedido.total))}</span></div>
 <div class="sep"></div>
-<div>Pagamento: <strong>${pedido.formaPagamento}</strong></div>
+<div>Pagamento: <span class="bold">${pedido.formaPagamento}</span></div>
 <div class="gap">Entrega/Retirada:</div>
-<div>${pedido.endereco}</div>
+<div class="bold">${pedido.endereco}</div>
 ${pedido.observacoes ? `<div class="sep"></div><div class="bold">Obs:</div><div>${pedido.observacoes}</div>` : ""}
 <div class="sep"></div>
 <div class="center gap2">*** OBRIGADO ***</div>
