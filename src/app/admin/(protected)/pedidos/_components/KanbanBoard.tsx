@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useTransition } from "react";
 import { StatusPedido } from "@/generated/prisma";
 import { atualizarStatusPedido } from "../actions";
 import { gerarLinkWhatsApp, mensagemDespacho } from "@/lib/whatsapp";
@@ -45,9 +45,9 @@ function brl(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function gerarComanda(pedido: Pedido, empresaNome: string, largura: 58 | 80) {
-  const mm = largura === 58 ? "54mm" : "76mm";
-  const pageW = `${largura}mm`;
+function gerarComanda(pedido: Pedido, empresaNome: string) {
+  const mm = "54mm";
+  const pageW = "58mm";
   const dataHora = new Date(pedido.criadoEm).toLocaleString("pt-BR", {
     day: "2-digit", month: "2-digit", year: "numeric",
     hour: "2-digit", minute: "2-digit",
@@ -119,58 +119,15 @@ ${pedido.observacoes ? `<div class="sep"></div><div class="bold">Obs:</div><div>
 </body></html>`;
 }
 
-function imprimirComanda(pedido: Pedido, empresaNome: string, largura: 58 | 80) {
-  const html = gerarComanda(pedido, empresaNome, largura);
+function imprimirComanda(pedido: Pedido, empresaNome: string) {
+  const html = gerarComanda(pedido, empresaNome);
   const w = window.open("", "_blank", "width=320,height=600,toolbar=0,menubar=0");
   if (!w) { alert("Permita pop-ups para imprimir a comanda."); return; }
   w.document.write(html);
   w.document.close();
 }
 
-function PrintMenu({ pedido, empresaNome }: { pedido: Pedido; empresaNome: string }) {
-  const [aberto, setAberto] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  function escolher(largura: 58 | 80) {
-    setAberto(false);
-    imprimirComanda(pedido, empresaNome, largura);
-  }
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setAberto((v) => !v)}
-        title="Imprimir comanda"
-        className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-      >
-        <Printer size={14} />
-      </button>
-
-      {aberto && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setAberto(false)} />
-          <div className="absolute right-0 top-7 z-20 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl shadow-lg overflow-hidden w-36">
-            <p className="px-3 py-2 text-[10px] font-semibold text-gray-400 dark:text-slate-400 uppercase tracking-widest border-b border-gray-100 dark:border-slate-600">
-              Largura do papel
-            </p>
-            {([58, 80] as const).map((l) => (
-              <button
-                key={l}
-                onClick={() => escolher(l)}
-                className="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors flex items-center gap-2"
-              >
-                <Printer size={12} />
-                {l} mm
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function KanbanCard({ pedido, empresaNome }: { pedido: Pedido; empresaNome: string }) {
+function KanbanCard({ pedido, empresaNome, feedbackWhatsapp }: { pedido: Pedido; empresaNome: string; feedbackWhatsapp: boolean }) {
   const [isPending, startTransition] = useTransition();
 
   function handleAvancar(novoStatus: StatusPedido) {
@@ -178,14 +135,16 @@ function KanbanCard({ pedido, empresaNome }: { pedido: Pedido; empresaNome: stri
   }
 
   function handleDespachar() {
-    const mensagem = mensagemDespacho({
-      nomeCliente: pedido.nomeCliente,
-      telefoneCliente: pedido.telefoneCliente,
-      endereco: pedido.endereco,
-      total: pedido.total,
-      itens: pedido.itens,
-    });
-    window.open(gerarLinkWhatsApp(pedido.telefoneCliente, mensagem), "_blank");
+    if (feedbackWhatsapp) {
+      const mensagem = mensagemDespacho({
+        nomeCliente: pedido.nomeCliente,
+        telefoneCliente: pedido.telefoneCliente,
+        endereco: pedido.endereco,
+        total: pedido.total,
+        itens: pedido.itens,
+      });
+      window.open(gerarLinkWhatsApp(pedido.telefoneCliente, mensagem), "_blank");
+    }
     startTransition(() => atualizarStatusPedido(pedido.id, "DESPACHADO"));
   }
 
@@ -203,7 +162,13 @@ function KanbanCard({ pedido, empresaNome }: { pedido: Pedido; empresaNome: stri
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <span className="text-xs text-gray-400 dark:text-slate-500">{formatarHora(pedido.criadoEm)}</span>
-          <PrintMenu pedido={pedido} empresaNome={empresaNome} />
+          <button
+            onClick={() => imprimirComanda(pedido, empresaNome)}
+            title="Imprimir comanda (58mm)"
+            className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+          >
+            <Printer size={14} />
+          </button>
         </div>
       </div>
 
@@ -239,7 +204,7 @@ function KanbanCard({ pedido, empresaNome }: { pedido: Pedido; empresaNome: stri
         {pedido.status === "EM_PREPARO" && (
           <button onClick={handleDespachar} disabled={isPending}
             className="w-full bg-green-600 hover:bg-green-700 text-white text-xs font-medium py-1.5 rounded-lg transition-colors">
-            Despachar + WhatsApp
+            {feedbackWhatsapp ? "Despachar + WhatsApp" : "Despachar"}
           </button>
         )}
         {pedido.status === "DESPACHADO" && (
@@ -259,7 +224,7 @@ function KanbanCard({ pedido, empresaNome }: { pedido: Pedido; empresaNome: stri
   );
 }
 
-export default function KanbanBoard({ pedidos, empresaNome }: { pedidos: Pedido[]; empresaNome: string }) {
+export default function KanbanBoard({ pedidos, empresaNome, feedbackWhatsapp }: { pedidos: Pedido[]; empresaNome: string; feedbackWhatsapp: boolean }) {
   const porStatus = (status: StatusPedido) => pedidos.filter((p) => p.status === status);
 
   return (
@@ -280,7 +245,7 @@ export default function KanbanBoard({ pedidos, empresaNome }: { pedidos: Pedido[
                 <p className="text-xs text-gray-400 dark:text-slate-600 text-center py-6">Nenhum pedido</p>
               )}
               {cards.map((pedido) => (
-                <KanbanCard key={pedido.id} pedido={pedido} empresaNome={empresaNome} />
+                <KanbanCard key={pedido.id} pedido={pedido} empresaNome={empresaNome} feedbackWhatsapp={feedbackWhatsapp} />
               ))}
             </div>
           </div>

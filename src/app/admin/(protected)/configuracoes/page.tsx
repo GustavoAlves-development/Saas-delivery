@@ -5,6 +5,7 @@ import { atualizarConfiguracoesLoja } from "./actions";
 import ImagensForm from "./_components/ImagensForm";
 import HorarioFuncionamento from "./_components/HorarioFuncionamento";
 import PaletaForm from "./_components/PaletaForm";
+import FeedbackToggle from "./_components/FeedbackToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -105,6 +106,12 @@ export default async function ConfiguracoesPage() {
           Horário de Funcionamento
         </h2>
         <HorarioFuncionamento horarioAtual={empresa.horarioFuncionamento} />
+      </section>
+
+      {/* Comportamento dos pedidos */}
+      <section className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700/50 p-6">
+        <h2 className="text-base font-semibold text-gray-800 dark:text-slate-100 mb-4">Pedidos</h2>
+        <FeedbackToggle atual={empresa.feedbackWhatsapp} />
       </section>
 
       {/* Link da loja */}

@@ -35,6 +35,11 @@ export default async function PedidosPage({
   hoje.setHours(0, 0, 0, 0);
   const isHoje = inicioDia.getTime() === hoje.getTime();
 
+  const empresa = await prisma.empresa.findUnique({
+    where: { id: session!.user.empresaId },
+    select: { feedbackWhatsapp: true },
+  });
+
   const pedidos = await prisma.pedido.findMany({
     where: {
       empresaId: session!.user.empresaId,
@@ -96,7 +101,7 @@ export default async function PedidosPage({
           )}
         </div>
       ) : (
-        <KanbanBoard pedidos={serialized} empresaNome={session!.user.empresaNome} />
+        <KanbanBoard pedidos={serialized} empresaNome={session!.user.empresaNome} feedbackWhatsapp={empresa?.feedbackWhatsapp ?? true} />
       )}
     </div>
   );

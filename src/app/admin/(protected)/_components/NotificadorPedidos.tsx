@@ -7,7 +7,7 @@ import { Bell, BellOff } from "lucide-react";
 export default function NotificadorPedidos() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const knownIdsRef = useRef<Set<string> | null>(null);
-  const [habilitado, setHabilitado] = useState(false);
+  const [habilitado, setHabilitado] = useState(true);
   const [novos, setNovos] = useState(0);
   const router = useRouter();
 
@@ -71,11 +71,11 @@ export default function NotificadorPedidos() {
   }, [verificar]);
 
   function handleClick() {
-    if (!habilitado) {
+    // Inicializa AudioContext na primeira interação do usuário (exigência do browser)
+    if (!audioCtxRef.current) {
       habilitar();
       return;
     }
-    // Quando habilitado: navega para pedidos e limpa o badge
     if (novos > 0) {
       setNovos(0);
       router.push("/admin/pedidos");
