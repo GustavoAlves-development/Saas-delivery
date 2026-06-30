@@ -85,13 +85,13 @@ function gerarComanda(pedido: Pedido, empresaNome: string) {
 <style>
   @page { size: ${pageW} auto; margin: 4mm 3mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.6; color: #000; background: #fff; width: ${mm}; }
-  .center { text-align: center; } .bold { font-weight: bold; } .lg { font-size: 16px; } .sm { font-size: 11px; }
-  .sep { border-top: 1px dashed #000; margin: 5px 0; }
+  body { font-family: 'Courier New', Courier, monospace; font-size: 16px; line-height: 1.7; color: #000; background: #fff; width: ${mm}; }
+  .center { text-align: center; } .bold { font-weight: bold; } .lg { font-size: 19px; } .sm { font-size: 13px; }
+  .sep { border-top: 1px dashed #000; margin: 6px 0; }
   .row { display: flex; justify-content: space-between; gap: 4px; }
   .item-nome { flex: 1; word-break: break-word; }
-  .item-detalhe { padding-left: 10px; font-size: 12px; }
-  .item-bloco { margin-bottom: 4px; }
+  .item-detalhe { padding-left: 10px; font-size: 15px; }
+  .item-bloco { margin-bottom: 5px; }
   .nowrap { white-space: nowrap; }
   .gap { margin-top: 4px; } .gap2 { margin-top: 8px; }
 </style>
@@ -103,6 +103,8 @@ function gerarComanda(pedido: Pedido, empresaNome: string) {
 <div class="sep"></div>
 <div class="bold">Cliente: ${pedido.nomeCliente}</div>
 ${pedido.telefoneCliente ? `<div>Tel: ${pedido.telefoneCliente}</div>` : ""}
+<div class="bold gap">Endereço:</div>
+<div class="bold">${pedido.endereco}</div>
 <div class="sep"></div>
 <div class="bold gap">ITENS:</div>
 ${itensHtml}
@@ -110,8 +112,6 @@ ${itensHtml}
 <div class="row bold lg gap"><span>TOTAL</span><span>${brl(Number(pedido.total))}</span></div>
 <div class="sep"></div>
 <div>Pagamento: <span class="bold">${pedido.formaPagamento}</span></div>
-<div class="gap">Entrega/Retirada:</div>
-<div class="bold">${pedido.endereco}</div>
 ${pedido.observacoes ? `<div class="sep"></div><div class="bold">Obs:</div><div>${pedido.observacoes}</div>` : ""}
 <div class="sep"></div>
 <div class="center gap2">*** OBRIGADO ***</div>
