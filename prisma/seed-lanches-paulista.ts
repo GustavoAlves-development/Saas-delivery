@@ -47,6 +47,10 @@ async function seed() {
     data: { nome: "Refrigerante", empresaId: empresa.id },
   });
 
+  const categCombos = await prisma.categoria.create({
+    data: { nome: "Combos", empresaId: empresa.id },
+  });
+
   // Adicionar produtos - LANCHES
   const lanches = [
     { nome: "01 - X Salada", descricao: "Hambúrguer, presunto, mussarela, tomate, alface e maionese.", preco: 29.0 },
@@ -96,6 +100,17 @@ async function seed() {
     { nome: "Roller 600ml", descricao: "", preco: 7.0 },
   ];
 
+  const combos = [
+    { nome: "1️⃣ Combo - X Bacon + X Calabresa", descricao: "2 lanches: X Bacon e X Calabresa", preco: 67.0 },
+    { nome: "2️⃣ Combo - X Salada + X Calabresa", descricao: "2 lanches: X Salada e X Calabresa", preco: 61.0 },
+    { nome: "3️⃣ Combo - X Salada + X Bacon", descricao: "2 lanches: X Salada e X Bacon", preco: 62.0 },
+    { nome: "4️⃣ Combo - X Burguer + X Salada", descricao: "2 lanches: X Burguer e X Salada", preco: 53.0 },
+    { nome: "5️⃣ Combo - X Burguer + X Calabresa", descricao: "2 lanches: X Burguer e X Calabresa", preco: 59.0 },
+    { nome: "6️⃣ Combo - X Burguer + X Bacon", descricao: "2 lanches: X Burguer e X Bacon", preco: 60.0 },
+    { nome: "7️⃣ Combo - 2x X Salada", descricao: "2 lanches: 2x X Salada", preco: 55.0 },
+    { nome: "8️⃣ Combo - 2x X Burguer", descricao: "2 lanches: 2x X Burguer", preco: 51.0 },
+  ];
+
   // Inserir lanches
   await prisma.produto.createMany({
     data: lanches.map(l => ({
@@ -125,6 +140,17 @@ async function seed() {
       descricao: r.descricao || undefined,
       preco: r.preco,
       categoriaId: categRefrigerante.id,
+      empresaId: empresa.id,
+    })),
+  });
+
+  // Inserir combos
+  await prisma.produto.createMany({
+    data: combos.map(c => ({
+      nome: c.nome,
+      descricao: c.descricao,
+      preco: c.preco,
+      categoriaId: categCombos.id,
       empresaId: empresa.id,
     })),
   });
