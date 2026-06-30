@@ -135,30 +135,28 @@ function imprimirComanda(pedido: Pedido, empresaNome: string) {
   w.document.close();
 }
 
-function imprimirAutomatico(pedido: Pedido, empresaNome: string) {
-  // Gera HTML com 2 vias separadas por quebra de página
-  const via = gerarComanda(pedido, empresaNome);
-  // Injeta a segunda via dentro do mesmo documento, após page-break
-  const html2vias = via.replace(
-    "<script>window.onload",
-    `<div style="page-break-before:always"></div>
-${via.match(/<body>([\s\S]*?)<script>/)?.[1] ?? ""}
-<script>window.onload`
-  );
-
-  const iframe = document.createElement("iframe");
-  iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;";
-  document.body.appendChild(iframe);
-  const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
-  if (!doc) { document.body.removeChild(iframe); return; }
-  doc.open();
-  doc.write(html2vias);
-  doc.close();
-  // Aguarda o iframe carregar antes de imprimir
+function imprimirViaIframe(html: string, delayMs: number) {
   setTimeout(() => {
-    try { iframe.contentWindow?.print(); } catch { /* silencia */ }
-    setTimeout(() => { try { document.body.removeChild(iframe); } catch { /* silencia */ } }, 3000);
-  }, 300);
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;";
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
+    if (!doc) { document.body.removeChild(iframe); return; }
+    doc.open();
+    doc.write(html);
+    doc.close();
+    setTimeout(() => {
+      try { iframe.contentWindow?.print(); } catch { /* silencia */ }
+      setTimeout(() => { try { document.body.removeChild(iframe); } catch { /* silencia */ } }, 4000);
+    }, 300);
+  }, delayMs);
+}
+
+function imprimirAutomatico(pedido: Pedido, empresaNome: string) {
+  const html = gerarComanda(pedido, empresaNome);
+  // Dois jobs separados: a impressora corta o papel entre eles
+  imprimirViaIframe(html, 0);
+  imprimirViaIframe(html, 5000);
 }
 
 function KanbanCard({ pedido, empresaNome, feedbackWhatsapp }: { pedido: Pedido; empresaNome: string; feedbackWhatsapp: boolean }) {
