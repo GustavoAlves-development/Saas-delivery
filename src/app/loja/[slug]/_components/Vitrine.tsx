@@ -607,7 +607,7 @@ function Carrinho({
                     value={obs}
                     onChange={(e) => setObs(e.target.value)}
                     rows={2}
-                    placeholder="Sem cebola, troco para R$ 50…"
+                    placeholder="Sem cebola, ponto do frango bem passado…"
                     className={`${inp} pl-9 resize-none`}
                   />
                 </div>

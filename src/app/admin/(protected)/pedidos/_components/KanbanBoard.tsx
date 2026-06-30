@@ -110,8 +110,16 @@ ${pedido.telefoneCliente ? `<div>Tel: ${pedido.telefoneCliente}</div>` : ""}
 ${itensHtml}
 <div class="sep"></div>
 <div class="row bold lg gap"><span>TOTAL</span><span>${brl(Number(pedido.total))}</span></div>
+${(() => {
+  const trocoMatch = pedido.formaPagamento.match(/troco p\/ R\$\s*([\d.,]+)/);
+  if (!trocoMatch) return "";
+  const trocoPara = parseFloat(trocoMatch[1].replace(",", "."));
+  const troco = trocoPara - Number(pedido.total);
+  return `<div class="row gap"><span>Dinheiro (recebido)</span><span class="nowrap bold">${brl(trocoPara)}</span></div>
+<div class="row"><span>Troco</span><span class="nowrap bold">${brl(troco > 0 ? troco : 0)}</span></div>`;
+})()}
 <div class="sep"></div>
-<div>Pagamento: <span class="bold">${pedido.formaPagamento}</span></div>
+<div>Pagamento: <span class="bold">${pedido.formaPagamento.replace(/ — troco p\/ R\$\s*[\d.,]+/, "")}</span></div>
 ${pedido.observacoes ? `<div class="sep"></div><div class="bold">Obs:</div><div>${pedido.observacoes}</div>` : ""}
 <div class="sep"></div>
 <div class="center gap2">*** OBRIGADO ***</div>
