@@ -20,6 +20,7 @@ model Empresa {
   corFundo              String            @default("#f9fafb")
   tipo                  TipoEmpresa       @default(LANCHONETE)
   feedbackWhatsapp      Boolean           @default(true)
+  impressaoAutomatica   Boolean           @default(false)
   plano                 String            @default("basico")
   statusMensalidade     StatusMensalidade @default(TRIAL)
   vencimentoMensalidade DateTime?

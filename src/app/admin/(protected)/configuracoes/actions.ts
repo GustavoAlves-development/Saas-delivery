@@ -59,6 +59,18 @@ export async function salvarPaletaCor(paletaId: string) {
   revalidatePath("/admin/configuracoes");
 }
 
+export async function salvarImpressaoAutomatica(ativo: boolean) {
+  const session = await auth();
+  if (!session) throw new Error("Não autorizado");
+
+  await prisma.empresa.update({
+    where: { id: session.user.empresaId },
+    data: { impressaoAutomatica: ativo },
+  });
+
+  revalidatePath("/admin/configuracoes");
+}
+
 export async function salvarFeedbackWhatsapp(ativo: boolean) {
   const session = await auth();
   if (!session) throw new Error("Não autorizado");

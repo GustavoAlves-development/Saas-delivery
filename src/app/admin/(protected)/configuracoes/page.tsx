@@ -6,6 +6,7 @@ import ImagensForm from "./_components/ImagensForm";
 import HorarioFuncionamento from "./_components/HorarioFuncionamento";
 import PaletaForm from "./_components/PaletaForm";
 import FeedbackToggle from "./_components/FeedbackToggle";
+import ImpressaoToggle from "./_components/ImpressaoToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -111,7 +112,12 @@ export default async function ConfiguracoesPage() {
       {/* Comportamento dos pedidos */}
       <section className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700/50 p-6">
         <h2 className="text-base font-semibold text-gray-800 dark:text-slate-100 mb-4">Pedidos</h2>
-        <FeedbackToggle atual={empresa.feedbackWhatsapp} />
+        <div className="space-y-4">
+          <FeedbackToggle atual={empresa.feedbackWhatsapp} />
+          <div className="border-t border-gray-100 dark:border-slate-700 pt-4">
+            <ImpressaoToggle atual={empresa.impressaoAutomatica} />
+          </div>
+        </div>
       </section>
 
       {/* Link da loja */}

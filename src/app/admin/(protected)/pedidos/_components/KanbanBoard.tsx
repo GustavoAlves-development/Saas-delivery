@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 import { StatusPedido } from "@/generated/prisma";
 import { atualizarStatusPedido } from "../actions";
 import { gerarLinkWhatsApp, mensagemDespacho } from "@/lib/whatsapp";
@@ -135,6 +135,32 @@ function imprimirComanda(pedido: Pedido, empresaNome: string) {
   w.document.close();
 }
 
+function imprimirAutomatico(pedido: Pedido, empresaNome: string) {
+  // Gera HTML com 2 vias separadas por quebra de página
+  const via = gerarComanda(pedido, empresaNome);
+  // Injeta a segunda via dentro do mesmo documento, após page-break
+  const html2vias = via.replace(
+    "<script>window.onload",
+    `<div style="page-break-before:always"></div>
+${via.match(/<body>([\s\S]*?)<script>/)?.[1] ?? ""}
+<script>window.onload`
+  );
+
+  const iframe = document.createElement("iframe");
+  iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;";
+  document.body.appendChild(iframe);
+  const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
+  if (!doc) { document.body.removeChild(iframe); return; }
+  doc.open();
+  doc.write(html2vias);
+  doc.close();
+  // Aguarda o iframe carregar antes de imprimir
+  setTimeout(() => {
+    try { iframe.contentWindow?.print(); } catch { /* silencia */ }
+    setTimeout(() => { try { document.body.removeChild(iframe); } catch { /* silencia */ } }, 3000);
+  }, 300);
+}
+
 function KanbanCard({ pedido, empresaNome, feedbackWhatsapp }: { pedido: Pedido; empresaNome: string; feedbackWhatsapp: boolean }) {
   const [isPending, startTransition] = useTransition();
 
@@ -232,8 +258,34 @@ function KanbanCard({ pedido, empresaNome, feedbackWhatsapp }: { pedido: Pedido;
   );
 }
 
-export default function KanbanBoard({ pedidos, empresaNome, feedbackWhatsapp }: { pedidos: Pedido[]; empresaNome: string; feedbackWhatsapp: boolean }) {
+export default function KanbanBoard({ pedidos, empresaNome, feedbackWhatsapp, impressaoAutomatica }: { pedidos: Pedido[]; empresaNome: string; feedbackWhatsapp: boolean; impressaoAutomatica: boolean }) {
   const porStatus = (status: StatusPedido) => pedidos.filter((p) => p.status === status);
+
+  // IDs já impressos automaticamente — persiste na sessão para não reimprimir após router.refresh()
+  const impressosRef = useRef<Set<string> | null>(null);
+  function getImpressos(): Set<string> {
+    if (!impressosRef.current) {
+      try {
+        impressosRef.current = new Set(JSON.parse(sessionStorage.getItem("ai_impressos") ?? "[]"));
+      } catch {
+        impressosRef.current = new Set();
+      }
+    }
+    return impressosRef.current;
+  }
+
+  useEffect(() => {
+    if (!impressaoAutomatica) return;
+    const impressos = getImpressos();
+    const novos = pedidos.filter((p) => p.status === "RECEBIDO" && !impressos.has(p.id));
+    if (novos.length === 0) return;
+    novos.forEach((p) => {
+      impressos.add(p.id);
+      imprimirAutomatico(p, empresaNome);
+    });
+    try { sessionStorage.setItem("ai_impressos", JSON.stringify([...impressos])); } catch { /* silencia */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pedidos]);
 
   return (
     <div className="flex gap-4 overflow-x-auto pb-4">
