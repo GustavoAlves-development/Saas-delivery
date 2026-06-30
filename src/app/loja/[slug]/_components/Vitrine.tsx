@@ -109,6 +109,7 @@ type FormPedido = {
   complemento: string;
   bairro: string;
   pagamento: string;
+  troco: string;
   obs: string;
 };
 
@@ -195,7 +196,7 @@ function gerarMensagemWhatsApp(
     `*Novo Pedido — ${empresa.nome}*\n\n` +
     `*Cliente:* ${form.nome}\n` +
     linhaEntrega +
-    `*Pagamento:* ${form.pagamento}\n` +
+    `*Pagamento:* ${form.pagamento}${form.troco ? ` — troco p/ R$ ${form.troco}` : ""}\n` +
     (form.obs ? `*Obs:* ${form.obs}\n` : "") +
     `\n*Itens:*\n${linhasItens}\n` +
     (linhaAcomp ? `\n${linhaAcomp}` : "") +
@@ -244,6 +245,7 @@ function Carrinho({
   const [cepLoading, setCepLoading] = useState(false);
   const [cepErro, setCepErro] = useState("");
   const [pagamento, setPagamento] = useState<FormaPagamento>("PIX");
+  const [troco, setTroco] = useState("");
   const [obs, setObs] = useState("");
 
   const subtotal = itens.reduce((s, i) => s + Number(i.precoEfetivo) * i.quantidade, 0);
@@ -287,7 +289,7 @@ function Carrinho({
       return alert("Preencha Rua, Número e Bairro.");
     }
     const selecionados = acompanhamentos.filter((a) => acompSelecionados.has(a.id));
-    onFinalizar({ nome, telefone, tipoEntrega, cep, rua, numero, complemento, bairro, pagamento, obs }, selecionados);
+    onFinalizar({ nome, telefone, tipoEntrega, cep, rua, numero, complemento, bairro, pagamento, troco, obs }, selecionados);
   }
 
   const inp =
@@ -573,6 +575,25 @@ function Carrinho({
                     </button>
                   ))}
                 </div>
+                {pagamento === "Dinheiro" && (
+                  <div className="mt-3">
+                    <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                      Troco para quanto? <span className="text-slate-400 font-normal">(opcional)</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium pointer-events-none">R$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0,00"
+                        value={troco}
+                        onChange={(e) => setTroco(e.target.value)}
+                        className={`${inp} pl-9`}
+                      />
+                    </div>
+                  </div>
+                )}
               </Secao>
 
               {/* Observações */}
@@ -822,7 +843,7 @@ export default function Vitrine({
       await fetch("/api/pedidos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ empresaId: empresa.id, nomeCliente: form.nome, telefoneCliente: form.telefone, endereco: enderecoString, formaPagamento: form.pagamento, observacoes: form.obs, total, itens: itensApi }),
+        body: JSON.stringify({ empresaId: empresa.id, nomeCliente: form.nome, telefoneCliente: form.telefone, endereco: enderecoString, formaPagamento: form.pagamento + (form.troco ? ` — troco p/ R$ ${form.troco}` : ""), observacoes: form.obs, total, itens: itensApi }),
       });
     } catch { /* falha silenciosa */ }
 
