@@ -58,6 +58,7 @@ export default function NotificadorPedidos() {
         recentes.forEach((id) => knownIdsRef.current!.add(id));
         setNovos((n) => n + recentes.length);
         if (habilitado) tocarChime();
+        router.refresh();
       }
     } catch {
       // silencia falhas de rede
@@ -66,7 +67,7 @@ export default function NotificadorPedidos() {
 
   useEffect(() => {
     verificar();
-    const id = setInterval(verificar, 20_000);
+    const id = setInterval(verificar, 5_000);
     return () => clearInterval(id);
   }, [verificar]);
 

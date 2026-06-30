@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import KanbanBoard from "./_components/KanbanBoard";
+import AutoRefresh from "./_components/AutoRefresh";
 import DateNav from "./_components/DateNav";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
@@ -65,6 +66,7 @@ export default async function PedidosPage({
 
   return (
     <div>
+      {isHoje && <AutoRefresh intervalMs={5000} />}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Pedidos</h1>
