@@ -732,7 +732,8 @@ export default function Vitrine({
 
   function abrirConfigurador(produto: Produto) {
     const precisaTamanho = empresa.tipo === "LANCHONETE" && (!!produto.precoMedio || !!produto.precoMini);
-    const precisaTipoPaoLocal = empresa.tipo === "LANCHONETE" && produto.tiposPao.length > 0;
+    // bread type only applies on grande/único — if product has multiple sizes, the configurator must open anyway
+    const precisaTipoPaoLocal = empresa.tipo === "LANCHONETE" && produto.tiposPao.length > 0 && !precisaTamanho;
     if (precisaTamanho || precisaTipoPaoLocal || adicionaisDoProduto(produto.categoriaId).length > 0) {
       setConfiguradorProduto(produto);
       setConfiguradorTamanho(undefined);
@@ -760,7 +761,8 @@ export default function Vitrine({
   function confirmarConfig() {
     if (!configuradorProduto) return;
     const precisaTamanho = empresa.tipo === "LANCHONETE" && (!!configuradorProduto.precoMedio || !!configuradorProduto.precoMini);
-    const precisaTipoPao = empresa.tipo === "LANCHONETE" && configuradorProduto.tiposPao.length > 0;
+    const precisaTipoPao = empresa.tipo === "LANCHONETE" && configuradorProduto.tiposPao.length > 0
+      && (!precisaTamanho || configuradorTamanho === "grande");
     if (precisaTamanho && !configuradorTamanho) return;
     if (precisaTipoPao && !configuradorTipoPao) return;
 
@@ -1371,7 +1373,8 @@ export default function Vitrine({
         {/* ── CONFIGURADOR DE ITEM ── */}
         {configuradorProduto && (() => {
           const precisaTamanho = empresa.tipo === "LANCHONETE" && (!!configuradorProduto.precoMedio || !!configuradorProduto.precoMini);
-          const precisaTipoPao = empresa.tipo === "LANCHONETE" && configuradorProduto.tiposPao.length > 0;
+          const precisaTipoPao = empresa.tipo === "LANCHONETE" && configuradorProduto.tiposPao.length > 0
+            && (!precisaTamanho || configuradorTamanho === "grande");
           const basePreco =
             configuradorTamanho === "mini" && configuradorProduto.precoMini ? Number(configuradorProduto.precoMini) :
             configuradorTamanho === "medio" && configuradorProduto.precoMedio ? Number(configuradorProduto.precoMedio) :
