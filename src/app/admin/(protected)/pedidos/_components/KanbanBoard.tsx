@@ -136,15 +136,7 @@ function imprimirComanda(pedido: Pedido, empresaNome: string) {
 }
 
 function imprimirAutomatico(pedido: Pedido, empresaNome: string) {
-  const comanda = gerarComanda(pedido, empresaNome);
-  // Extrai o conteúdo do body para duplicar dentro de um único job
-  const bodyMatch = comanda.match(/<body>([\s\S]*?)<script>/);
-  const corpo = bodyMatch?.[1] ?? "";
-  // Um único job com 2 vias — a impressora corta ao fim de cada página
-  const html2vias = comanda.replace(
-    "<body>",
-    `<body>${corpo}<div style="page-break-after:always"></div>`
-  );
+  const html = gerarComanda(pedido, empresaNome);
 
   const iframe = document.createElement("iframe");
   iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;";
@@ -152,7 +144,7 @@ function imprimirAutomatico(pedido: Pedido, empresaNome: string) {
   const doc = iframe.contentDocument ?? iframe.contentWindow?.document;
   if (!doc) { document.body.removeChild(iframe); return; }
   doc.open();
-  doc.write(html2vias);
+  doc.write(html);
   doc.close();
   setTimeout(() => {
     try { iframe.contentWindow?.print(); } catch { /* silencia */ }
