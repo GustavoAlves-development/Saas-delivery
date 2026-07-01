@@ -256,17 +256,18 @@ function KanbanCard({ pedido, empresaNome, feedbackWhatsapp }: { pedido: Pedido;
   );
 }
 
-// Singleton fora do componente — sobrevive a qualquer re-render ou re-mount
-let _impressosCache: Set<string> | null = null;
-function getImpressosGlobal(): Set<string> {
-  if (!_impressosCache) {
-    try {
-      _impressosCache = new Set(JSON.parse(sessionStorage.getItem("ai_impressos") ?? "[]"));
-    } catch {
-      _impressosCache = new Set();
-    }
+// Usa window como registro global — único por aba, imune a re-avaliação de módulo
+function jaImpresso(id: string): boolean {
+  const w = window as typeof window & { __ai_impressos?: Set<string> };
+  if (!w.__ai_impressos) {
+    // Restaura da sessão anterior (recarregamento de página)
+    try { w.__ai_impressos = new Set(JSON.parse(sessionStorage.getItem("ai_impressos") ?? "[]")); }
+    catch { w.__ai_impressos = new Set(); }
   }
-  return _impressosCache;
+  if (w.__ai_impressos.has(id)) return true;
+  w.__ai_impressos.add(id);
+  try { sessionStorage.setItem("ai_impressos", JSON.stringify([...w.__ai_impressos])); } catch { /* silencia */ }
+  return false;
 }
 
 export default function KanbanBoard({ pedidos, empresaNome, feedbackWhatsapp, impressaoAutomatica }: { pedidos: Pedido[]; empresaNome: string; feedbackWhatsapp: boolean; impressaoAutomatica: boolean }) {
@@ -274,12 +275,7 @@ export default function KanbanBoard({ pedidos, empresaNome, feedbackWhatsapp, im
 
   useEffect(() => {
     if (!impressaoAutomatica) return;
-    const impressos = getImpressosGlobal();
-    const novos = pedidos.filter((p) => p.status === "RECEBIDO" && !impressos.has(p.id));
-    if (novos.length === 0) return;
-    // Marca todos como impressos ANTES de disparar qualquer job
-    novos.forEach((p) => impressos.add(p.id));
-    try { sessionStorage.setItem("ai_impressos", JSON.stringify([...impressos])); } catch { /* silencia */ }
+    const novos = pedidos.filter((p) => p.status === "RECEBIDO" && !jaImpresso(p.id));
     novos.forEach((p) => imprimirAutomatico(p, empresaNome));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedidos]);
