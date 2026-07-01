@@ -58,7 +58,6 @@ export default function NotificadorPedidos() {
         recentes.forEach((id) => knownIdsRef.current!.add(id));
         setNovos((n) => n + recentes.length);
         if (habilitado) tocarChime();
-        router.refresh();
       }
     } catch {
       // silencia falhas de rede

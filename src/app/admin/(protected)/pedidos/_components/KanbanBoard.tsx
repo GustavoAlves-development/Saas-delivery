@@ -256,32 +256,31 @@ function KanbanCard({ pedido, empresaNome, feedbackWhatsapp }: { pedido: Pedido;
   );
 }
 
+// Singleton fora do componente — sobrevive a qualquer re-render ou re-mount
+let _impressosCache: Set<string> | null = null;
+function getImpressosGlobal(): Set<string> {
+  if (!_impressosCache) {
+    try {
+      _impressosCache = new Set(JSON.parse(sessionStorage.getItem("ai_impressos") ?? "[]"));
+    } catch {
+      _impressosCache = new Set();
+    }
+  }
+  return _impressosCache;
+}
+
 export default function KanbanBoard({ pedidos, empresaNome, feedbackWhatsapp, impressaoAutomatica }: { pedidos: Pedido[]; empresaNome: string; feedbackWhatsapp: boolean; impressaoAutomatica: boolean }) {
   const porStatus = (status: StatusPedido) => pedidos.filter((p) => p.status === status);
 
-  // IDs já impressos automaticamente — persiste na sessão para não reimprimir após router.refresh()
-  const impressosRef = useRef<Set<string> | null>(null);
-  function getImpressos(): Set<string> {
-    if (!impressosRef.current) {
-      try {
-        impressosRef.current = new Set(JSON.parse(sessionStorage.getItem("ai_impressos") ?? "[]"));
-      } catch {
-        impressosRef.current = new Set();
-      }
-    }
-    return impressosRef.current;
-  }
-
   useEffect(() => {
     if (!impressaoAutomatica) return;
-    const impressos = getImpressos();
+    const impressos = getImpressosGlobal();
     const novos = pedidos.filter((p) => p.status === "RECEBIDO" && !impressos.has(p.id));
     if (novos.length === 0) return;
-    novos.forEach((p) => {
-      impressos.add(p.id);
-      imprimirAutomatico(p, empresaNome);
-    });
+    // Marca todos como impressos ANTES de disparar qualquer job
+    novos.forEach((p) => impressos.add(p.id));
     try { sessionStorage.setItem("ai_impressos", JSON.stringify([...impressos])); } catch { /* silencia */ }
+    novos.forEach((p) => imprimirAutomatico(p, empresaNome));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedidos]);
 
