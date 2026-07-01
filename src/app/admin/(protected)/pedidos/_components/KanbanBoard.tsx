@@ -85,7 +85,7 @@ function gerarComanda(pedido: Pedido, empresaNome: string) {
 <style>
   @page { size: ${pageW} auto; margin: 4mm 3mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Courier New', Courier, monospace; font-size: 16px; line-height: 1.7; color: #000; background: #fff; width: ${mm}; }
+  body { font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: 700; line-height: 1.7; color: #000; background: #fff; width: ${mm}; }
   .center { text-align: center; } .bold { font-weight: bold; } .lg { font-size: 19px; } .sm { font-size: 13px; }
   .sep { border-top: 1px dashed #000; margin: 6px 0; }
   .row { display: flex; justify-content: space-between; gap: 4px; }
