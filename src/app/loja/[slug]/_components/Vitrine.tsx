@@ -70,6 +70,7 @@ type Acompanhamento = {
 type Categoria = {
   id: string;
   nome: string;
+  qtdEscolhasPao: number;
   produtos: Produto[];
 };
 
@@ -723,7 +724,7 @@ export default function Vitrine({
   const [busca, setBusca] = useState("");
   const [configuradorProduto, setConfiguradorProduto] = useState<Produto | null>(null);
   const [configuradorTamanho, setConfiguradorTamanho] = useState<Tamanho | undefined>(undefined);
-  const [configuradorTipoPao, setConfiguradorTipoPao] = useState<string | undefined>(undefined);
+  const [configuradorTipoPao, setConfiguradorTipoPao] = useState<string[]>([]);
   const [configuradorAdicionais, setConfiguradorAdicionais] = useState<Set<string>>(new Set());
   const horario = parsedHorario(empresa.horarioFuncionamento);
   const hoje = horario?.find((d) => d.dia === DIAS[new Date().getDay()]);
@@ -745,6 +746,10 @@ export default function Vitrine({
     [empresa.slug]
   );
 
+  function qtdEscolhasPaoDeProduto(categoriaId: string): number {
+    return categorias.find((c) => c.id === categoriaId)?.qtdEscolhasPao ?? 1;
+  }
+
   function adicionaisDoProduto(categoriaId: string) {
     return adicionais.filter(
       (a) => !a.categoriaIds || a.categoriaIds.length === 0 || a.categoriaIds.includes(categoriaId)
@@ -754,11 +759,12 @@ export default function Vitrine({
   function abrirConfigurador(produto: Produto) {
     const precisaTamanho = empresa.tipo === "LANCHONETE" && (!!produto.precoMedio || !!produto.precoMini);
     // bread type only applies on grande/único — if product has multiple sizes, the configurator must open anyway
-    const precisaTipoPaoLocal = empresa.tipo === "LANCHONETE" && produto.tiposPao.length > 0 && !precisaTamanho;
+    const precisaTipoPaoLocal = empresa.tipo === "LANCHONETE" && produto.tiposPao.length > 0 && !precisaTamanho
+      && qtdEscolhasPaoDeProduto(produto.categoriaId) > 0;
     if (precisaTamanho || precisaTipoPaoLocal || adicionaisDoProduto(produto.categoriaId).length > 0) {
       setConfiguradorProduto(produto);
       setConfiguradorTamanho(undefined);
-      setConfiguradorTipoPao(undefined);
+      setConfiguradorTipoPao([]);
       setConfiguradorAdicionais(new Set());
       return;
     }
@@ -782,10 +788,12 @@ export default function Vitrine({
   function confirmarConfig() {
     if (!configuradorProduto) return;
     const precisaTamanho = empresa.tipo === "LANCHONETE" && (!!configuradorProduto.precoMedio || !!configuradorProduto.precoMini);
-    const precisaTipoPao = empresa.tipo === "LANCHONETE" && configuradorProduto.tiposPao.length > 0
-      && (!precisaTamanho || configuradorTamanho === "grande");
+    const qtdPao = empresa.tipo === "LANCHONETE" && configuradorProduto.tiposPao.length > 0
+      && (!precisaTamanho || configuradorTamanho === "grande")
+      ? qtdEscolhasPaoDeProduto(configuradorProduto.categoriaId)
+      : 0;
     if (precisaTamanho && !configuradorTamanho) return;
-    if (precisaTipoPao && !configuradorTipoPao) return;
+    if (qtdPao > 0 && configuradorTipoPao.filter(Boolean).length < qtdPao) return;
 
     const basePreco =
       configuradorTamanho === "mini" && configuradorProduto.precoMini ? configuradorProduto.precoMini :
@@ -795,13 +803,14 @@ export default function Vitrine({
     const extrasTotal = adicionaisSel.reduce((s, a) => s + Number(a.preco), 0);
     const precoEfetivo = (Number(basePreco) + extrasTotal).toFixed(2);
     const adicionaisKey = [...configuradorAdicionais].sort().join(",");
-    const chave = `${configuradorProduto.id}_${configuradorTamanho ?? ""}_${configuradorTipoPao ?? ""}_${adicionaisKey}`;
+    const tipoPaoStr = configuradorTipoPao.filter(Boolean).join(" / ");
+    const chave = `${configuradorProduto.id}_${configuradorTamanho ?? ""}_${tipoPaoStr}_${adicionaisKey}`;
 
     const existe = itens.find((i) => i.chave === chave);
     if (existe) {
       salvar(itens.map((i) => i.chave === chave ? { ...i, quantidade: i.quantidade + 1 } : i));
     } else {
-      salvar([...itens, { chave, produto: configuradorProduto, quantidade: 1, tamanho: configuradorTamanho, tipoPao: configuradorTipoPao, precoEfetivo, adicionais: adicionaisSel }]);
+      salvar([...itens, { chave, produto: configuradorProduto, quantidade: 1, tamanho: configuradorTamanho, tipoPao: tipoPaoStr || undefined, precoEfetivo, adicionais: adicionaisSel }]);
     }
     setConfiguradorProduto(null);
   }
@@ -1394,8 +1403,10 @@ export default function Vitrine({
         {/* ── CONFIGURADOR DE ITEM ── */}
         {configuradorProduto && (() => {
           const precisaTamanho = empresa.tipo === "LANCHONETE" && (!!configuradorProduto.precoMedio || !!configuradorProduto.precoMini);
-          const precisaTipoPao = empresa.tipo === "LANCHONETE" && configuradorProduto.tiposPao.length > 0
-            && (!precisaTamanho || configuradorTamanho === "grande");
+          const qtdPao = empresa.tipo === "LANCHONETE" && configuradorProduto.tiposPao.length > 0
+            && (!precisaTamanho || configuradorTamanho === "grande")
+            ? qtdEscolhasPaoDeProduto(configuradorProduto.categoriaId)
+            : 0;
           const basePreco =
             configuradorTamanho === "mini" && configuradorProduto.precoMini ? Number(configuradorProduto.precoMini) :
             configuradorTamanho === "medio" && configuradorProduto.precoMedio ? Number(configuradorProduto.precoMedio) :
@@ -1404,7 +1415,7 @@ export default function Vitrine({
             .filter((a) => configuradorAdicionais.has(a.id))
             .reduce((s, a) => s + Number(a.preco), 0);
           const totalModal = basePreco + extrasTotal;
-          const podeAdicionar = (!precisaTamanho || !!configuradorTamanho) && (!precisaTipoPao || !!configuradorTipoPao);
+          const podeAdicionar = (!precisaTamanho || !!configuradorTamanho) && (qtdPao === 0 || configuradorTipoPao.filter(Boolean).length >= qtdPao);
 
           return (
             <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-6 sm:pb-0">
@@ -1452,18 +1463,25 @@ export default function Vitrine({
                     </div>
                   )}
 
-                  {/* Tipo de Pão */}
-                  {precisaTipoPao && (
-                    <div>
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Tipo de Pão <span className="text-red-400 normal-case font-normal">obrigatório</span></p>
+                  {/* Tipo de Pão — N seletores conforme qtdEscolhasPao da categoria */}
+                  {qtdPao > 0 && Array.from({ length: qtdPao }).map((_, idx) => (
+                    <div key={idx}>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                        {qtdPao > 1 ? `Pão do Lanche ${idx + 1}` : "Tipo de Pão"}
+                        {" "}<span className="text-red-400 normal-case font-normal">obrigatório</span>
+                      </p>
                       <div className="flex flex-wrap gap-2">
                         {configuradorProduto.tiposPao.map((tipo) => (
                           <button
                             key={tipo}
                             type="button"
-                            onClick={() => setConfiguradorTipoPao(tipo)}
+                            onClick={() => setConfiguradorTipoPao((prev) => {
+                              const next = [...prev];
+                              next[idx] = tipo;
+                              return next;
+                            })}
                             className={`px-4 py-2.5 rounded-2xl border-2 text-sm font-semibold transition-all duration-200 ${
-                              configuradorTipoPao === tipo
+                              configuradorTipoPao[idx] === tipo
                                 ? "v-selected"
                                 : "border-slate-200 hover:border-slate-300 bg-white text-slate-700"
                             }`}
@@ -1473,7 +1491,7 @@ export default function Vitrine({
                         ))}
                       </div>
                     </div>
-                  )}
+                  ))}
 
                   {/* Adicionais */}
                   {configuradorProduto && adicionaisDoProduto(configuradorProduto.categoriaId).length > 0 && (
